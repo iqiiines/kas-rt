@@ -3,101 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - RT 001/001</title>
+    <title>Executive Admin Dashboard - RT 001/001</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        :root { --bg: #f4f7f6; --white: #fff; --green: #27ae60; --red: #c0392b; --blue: #1e3799; --dark: #2c3e50; --orange: #f39c12; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg); padding: 15px; display: flex; justify-content: center; color: #333; }
-        .container { width: 100%; max-width: 480px; background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); position: relative; }
-        .app-brand { font-family: 'Georgia', serif; font-size: 22px; font-weight: bold; color: var(--blue); text-align: center; margin-bottom: 5px; }
-        .app-address { font-size: 11px; color: #777; text-align: center; margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; }
-        .btn { background: var(--blue); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-approve { background: var(--green); padding: 6px 12px; font-size: 12px; width: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .card { background: #fdfdfd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eaeaea; text-align: center; }
-        .balance { font-size: 28px; font-weight: bold; }
-        .plus { color: var(--green); } .minus { color: var(--red); }
-        .list-item { display: flex; justify-content: space-between; padding: 12px; background: white; border-left: 5px solid; margin-bottom: 10px; border-radius: 6px; border: 1px solid #f0f0f0; }
-        .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; }
-        .pending-box { background: #fff4e5; padding: 15px; border-radius: 10px; border: 1px solid #ffe0b2; margin-bottom: 20px; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 15px; }
-        .modal-content { background: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
-        .setting-section { border-top: 1px solid #eee; margin-top: 15px; padding-top: 10px; }
-        label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
-        @media print { .no-print { display: none !important; } #printHeader { display: block !important; } }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background: var(--bg-main); 
+            color: var(--text-main);
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 500px; 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        /* Luxury Header */
+        .app-header { text-align: center; margin-bottom: 30px; }
+        .app-brand { font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .app-address { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Login Styling */
+        #loginScreen h2 { font-size: 18px; margin-bottom: 20px; color: var(--text-main); }
+        input, select { 
+            width: 100%; padding: 14px; margin: 10px 0; 
+            border-radius: 12px; border: 1px solid #e2e8f0; 
+            background: #f1f5f9; transition: 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+
+        .btn { 
+            width: 100%; padding: 14px; border: none; border-radius: 12px; 
+            font-weight: 600; cursor: pointer; transition: 0.2s; 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        
+        /* Dashboard Components */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-weight: 700; font-size: 18px; }
+
+        .card-stats { 
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+            color: white; padding: 25px; border-radius: 20px; 
+            text-align: center; margin-bottom: 25px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .balance-label { font-size: 12px; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-value { font-size: 32px; font-weight: 800; margin-bottom: 20px; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; }
+        .stat-val { font-weight: 700; font-size: 14px; }
+        .stat-label { font-size: 10px; opacity: 0.7; }
+
+        /* Real-time Notification Box */
+        .pending-box { 
+            background: #fffbeb; border: 1px solid #fef3c7; 
+            padding: 15px; border-radius: 16px; margin-bottom: 25px;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* List Items */
+        .list-item { 
+            background: #fff; border: 1px solid #f1f5f9; 
+            padding: 16px; border-radius: 16px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.2s;
+        }
+        .list-item:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+
+        /* Modal Settings */
+        .modal { 
+            display: none; position: fixed; z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content { 
+            background: white; padding: 30px; border-radius: 24px; 
+            width: 100%; max-width: 400px;
+        }
+
+        .no-print { display: block; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="loginScreen">
-        <div class="app-brand">🏘️ PETTY CASH RT 001 / RW 001</div>
-        <h2 id="txtLoginTitle" style="text-align:center; font-size:16px; margin-bottom:15px;">Admin Login</h2>
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button id="btnAuth" class="btn" onclick="handleAuth()">Login</button>
-        <p id="authToggle" style="font-size:12px; text-align:center; cursor:pointer; color:var(--blue); margin-top:10px;" onclick="toggleAuthMode()">Register New Admin</p>
+        <div class="app-header">
+            <div class="app-brand">PETTY CASH PREMIER</div>
+            <div class="app-address">RT 001/001 Jatimurni, Bekasi</div>
+        </div>
+        <h2 id="txtLoginTitle">Admin Authentication</h2>
+        <input type="email" id="email" placeholder="Administrator Email">
+        <input type="password" id="password" placeholder="Access Password">
+        <button id="btnAuth" class="btn btn-primary" onclick="handleAuth()">Sign In</button>
+        <p id="authToggle" style="font-size:13px; text-align:center; color:var(--primary); margin-top:15px; cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Register New Admin</p>
     </div>
 
     <div id="appScreen" style="display:none;">
-        <div class="header">
-            <h3 id="txtAppName">Cashflow Dashboard</h3>
-            <button onclick="openSettings()" style="width:auto; padding:5px 10px; font-size:12px;">⚙️ Settings</button>
+        <div class="section-header">
+            <h3 class="section-title" id="txtAppName">Financial Overview</h3>
+            <button onclick="openSettings()" class="btn" style="width:auto; padding:8px 12px; background:#f1f5f9; color:var(--text-main); font-size:12px;">⚙️ Settings</button>
         </div>
 
-        <div id="pendingBox" class="pending-box">
-            <h4 id="txtPendingTitle" style="color:var(--orange); font-size:14px; margin-bottom:10px;">🔔 Pending Requests</h4>
+        <div id="pendingBox" class="pending-box" style="display:none;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span style="font-size:18px;">🔔</span>
+                <h4 id="txtPendingTitle" style="color:var(--warning); font-size:14px; font-weight:700;">Approval Queue</h4>
+            </div>
             <div id="pendingList"></div>
         </div>
 
-        <div class="card">
-            <div id="txtOpenBal" style="font-size:12px; color:#777;">Opening Balance:</div>
-            <div class="balance" id="totalSaldo">Rp 0</div>
-            <div style="display:flex; justify-content: space-around; margin-top:10px;">
-                <div><small id="txtIn">Total In</small><p class="plus" id="inc">+0</p></div>
-                <div><small id="txtOut">Total Out</small><p class="minus" id="exp">-0</p></div>
+        <div class="card-stats">
+            <div class="balance-label" id="txtOpenBal">Available Balance</div>
+            <div class="balance-value" id="totalSaldo">Rp 0</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label" id="txtIn">Income</div>
+                    <div class="stat-val" id="inc" style="color:#34d399;">+0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label" id="txtOut">Expense</div>
+                    <div class="stat-val" id="exp" style="color:#fb7185;">-0</div>
+                </div>
             </div>
         </div>
 
         <div class="chart-container"><canvas id="cashflowChart"></canvas></div>
 
-        <form id="txForm" class="no-print">
-            <div style="display:flex; gap:5px;">
-                <select id="jenis" style="flex:1;"><option value="plus">Income (+)</option><option value="minus">Expense (-)</option></select>
-                <input type="number" id="jml" placeholder="Amount" style="flex:2;" required>
+        <form id="txForm" class="no-print" style="margin-top:20px;">
+            <div style="display:flex; gap:8px;">
+                <select id="jenis" style="flex:1;"><option value="plus">In (+)</option><option value="minus">Out (-)</option></select>
+                <input type="number" id="jml" placeholder="Amount (Rp)" style="flex:2;" required>
             </div>
-            <input type="text" id="ket" placeholder="Description" required>
-            <button type="submit" class="btn" id="btnSave">Save Transaction</button>
+            <input type="text" id="ket" placeholder="Transaction Description" required>
+            <button type="submit" class="btn btn-primary" id="btnSave">Record Transaction</button>
         </form>
 
-        <h4 id="txtHistTitle" style="margin:20px 0 10px;">History</h4>
+        <h4 id="txtHistTitle" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
         <div id="list"></div>
-        <button class="btn no-print" style="background:var(--dark); margin-top:10px;" onclick="window.print()">📄 Print Report</button>
+        
+        <button class="btn no-print" style="background:#1e293b; color:white; margin-top:20px;" onclick="window.print()">📄 Generate Report</button>
     </div>
 
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <h3 id="txtSettTitle">Settings</h3>
+            <h3 style="margin-bottom:20px;" id="txtSettTitle">Settings</h3>
+            
             <div class="setting-section">
-                <label id="lblLang">Language</label>
+                <label id="lblLang">Language Selection</label>
                 <select id="langSelect" onchange="changeLang(this.value)">
                     <option value="en">English</option>
-                    <option value="id">Indonesia</option>
+                    <option value="id">Bahasa Indonesia</option>
                 </select>
             </div>
-            <div class="setting-section">
-                <label id="lblEmail">Update Email</label>
-                <input type="email" id="newEmail" placeholder="New Email">
-                <button class="btn" style="padding:8px; font-size:12px;" onclick="updateEmail()">Update</button>
-                <label id="lblPass">Update Password</label>
-                <input type="password" id="newPass" placeholder="Min 6 characters">
-                <button class="btn" style="padding:8px; font-size:12px;" onclick="updatePassword()">Update</button>
+
+            <div class="setting-section" style="margin-bottom:20px;">
+                <label id="lblEmail">Admin Credentials</label>
+                <input type="email" id="newEmail" placeholder="Update Email">
+                <input type="password" id="newPass" placeholder="Update Password">
+                <button class="btn btn-primary" style="padding:10px; font-size:13px;" onclick="updateProfile()">Save Changes</button>
             </div>
-            <button class="btn" style="background:var(--red); margin-top:15px;" onclick="logout()">Logout</button>
-            <button class="btn" style="background:#ccc; color:#333;" onclick="closeSettings()">Close</button>
+
+            <button class="btn" style="background:var(--danger); color:white; margin-bottom:10px;" onclick="logout()" id="btnLogout">Sign Out</button>
+            <button class="btn" style="background:#f1f5f9; color:var(--text-main);" onclick="closeSettings()">Cancel</button>
         </div>
     </div>
 </div>
@@ -110,23 +210,51 @@
     let authMode = 'login';
     let currentLang = localStorage.getItem('lang') || 'en';
     let myChart = null;
+    let idleTimer;
 
     const i18n = {
         en: {
-            login: "Admin Login", reg: "Register Admin", btnLogin: "Login", btnReg: "Register Now",
-            pending: "🔔 Pending Requests", none: "No pending requests", openBal: "Opening Balance: ",
-            totalIn: "Total In", totalOut: "Total Out", save: "Save Transaction", history: "History",
-            appName: "Cashflow Dashboard", settings: "Settings", lang: "Language", updEmail: "Update Email",
-            updPass: "Update Password", logout: "Logout"
+            login: "Admin Authentication", reg: "New Admin Registration", btnLogin: "Sign In", btnReg: "Create Account",
+            pending: "Approval Queue", none: "No requests pending", openBal: "Available Balance",
+            totalIn: "Income", totalOut: "Expense", save: "Record Transaction", history: "Recent History",
+            appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out"
         },
         id: {
-            login: "Login Pengurus", reg: "Daftar Pengurus", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
-            pending: "🔔 Menunggu Persetujuan", none: "Tidak ada antrean", openBal: "Saldo Awal: ",
-            totalIn: "Total Masuk", totalOut: "Total Keluar", save: "Simpan Transaksi", history: "Riwayat",
-            appName: "Dashboard Kas", settings: "Pengaturan", lang: "Bahasa", updEmail: "Ganti Email",
-            updPass: "Ganti Password", logout: "Keluar"
+            login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
+            pending: "Antrean Persetujuan", none: "Tidak ada antrean", openBal: "Saldo Tersedia",
+            totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
+            appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar"
         }
     };
+
+    // --- REALTIME & AUTO-LOGOUT LOGIC ---
+
+    function setupRealtime() {
+        sbClient
+            .channel('any')
+            .on('postgres_changes', { event: '*', table: 'transaksi' }, (payload) => {
+                console.log('Change received!', payload);
+                fetchData();
+                fetchPending();
+            })
+            .subscribe();
+    }
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        // Logout otomatis setelah 5 menit (300.000 ms)
+        idleTimer = setTimeout(() => {
+            alert("Session expired due to inactivity.");
+            logout();
+        }, 300000); 
+    }
+
+    // Pantau aktivitas pengguna
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+        window.addEventListener(evt, resetIdleTimer, true);
+    });
+
+    // --- CORE FUNCTIONS ---
 
     function applyLang() {
         const t = i18n[currentLang];
@@ -141,8 +269,7 @@
         document.getElementById('txtAppName').innerText = t.appName;
         document.getElementById('txtSettTitle').innerText = t.settings;
         document.getElementById('lblLang').innerText = t.lang;
-        document.getElementById('lblEmail').innerText = t.updEmail;
-        document.getElementById('lblPass').innerText = t.updPass;
+        document.getElementById('btnLogout').innerText = t.logout;
         document.getElementById('langSelect').value = currentLang;
         fetchData();
         fetchPending();
@@ -157,8 +284,10 @@
             if (prof?.is_approved) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appScreen').style.display = 'block';
+                setupRealtime();
+                resetIdleTimer();
                 applyLang();
-            } else { await sbClient.auth.signOut(); alert("Account needs RT approval."); }
+            } else { await sbClient.auth.signOut(); alert("Wait for RT head approval."); }
         } else { applyLang(); }
     }
 
@@ -170,7 +299,7 @@
             if (error) alert(error.message); else location.reload();
         } else {
             const { error } = await sbClient.auth.signUp({ email, password: pass });
-            if (error) alert(error.message); else alert("Registered! Wait for RT approval.");
+            if (error) alert(error.message); else alert("Registration successful! Contact RT Head.");
         }
     }
 
@@ -188,10 +317,16 @@
         data.forEach(tr => {
             const amt = parseFloat(tr.jumlah);
             tr.jenis === 'plus' ? inc += amt : exp += amt;
-            list.innerHTML += `<div class="list-item" style="border-left-color:${tr.jenis==='plus'?'#27ae60':'#c0392b'}">
-                <div><b>${tr.keterangan}</b><br><small>${new Date(tr.created_at).toLocaleDateString()}</small></div>
-                <div class="${tr.jenis}"><b>Rp ${amt.toLocaleString()}</b></div>
-            </div>`;
+            list.innerHTML += `
+                <div class="list-item">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">${tr.keterangan}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${new Date(tr.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div style="font-weight:700; color:${tr.jenis==='plus'?'var(--success)':'var(--danger)'}">
+                        ${tr.jenis==='plus'?'+':'-'} Rp ${amt.toLocaleString()}
+                    </div>
+                </div>`;
         });
         document.getElementById('totalSaldo').innerText = `Rp ${(inc - exp).toLocaleString()}`;
         document.getElementById('inc').innerText = `+Rp ${inc.toLocaleString()}`;
@@ -201,19 +336,28 @@
 
     async function fetchPending() {
         const { data } = await sbClient.from('transaksi').select('*').eq('status', 'pending');
+        const box = document.getElementById('pendingBox');
         const container = document.getElementById('pendingList');
-        container.innerHTML = (data?.length === 0) ? `<small>${i18n[currentLang].none}</small>` : '';
-        data?.forEach(tr => {
-            container.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:5px; border-bottom:1px solid #eee;">
-                <div style="font-size:12px;"><b>${tr.keterangan}</b><br>Rp ${parseFloat(tr.jumlah).toLocaleString()}</div>
-                <button class="btn btn-approve" onclick="approveTx(${tr.id})">Approve</button>
-            </div>`;
+        
+        if (!data || data.length === 0) {
+            box.style.display = 'none';
+            return;
+        }
+
+        box.style.display = 'block';
+        container.innerHTML = '';
+        data.forEach(tr => {
+            container.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid #fef3c7;">
+                    <div style="font-size:12px;"><b>${tr.keterangan}</b><br>Rp ${parseFloat(tr.jumlah).toLocaleString()}</div>
+                    <button class="btn btn-primary" style="width:auto; padding:6px 12px; font-size:11px; background:var(--success);" onclick="approveTx(${tr.id})">Approve</button>
+                </div>`;
         });
     }
 
     async function approveTx(id) {
         await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id);
-        fetchData(); fetchPending();
+        // Data akan refresh otomatis via Realtime Channel
     }
 
     document.getElementById('txForm').onsubmit = async (e) => {
@@ -224,7 +368,7 @@
             jenis: document.getElementById('jenis').value,
             status: 'approved'
         }]);
-        if (!error) { e.target.reset(); fetchData(); }
+        if (!error) e.target.reset();
     };
 
     function renderChart(i, e) {
@@ -232,21 +376,31 @@
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: ['In', 'Out'], datasets: [{ data: [i, e], backgroundColor: ['#27ae60', '#c0392b'] }] },
-            options: { responsive: true, maintainAspectRatio: false }
+            data: { 
+                labels: ['Income', 'Expense'], 
+                datasets: [{ 
+                    data: [i, e], 
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 11 } } } }
+            }
         });
     }
 
-    async function updateEmail() {
+    async function updateProfile() {
         const email = document.getElementById('newEmail').value;
-        const { error } = await sbClient.auth.updateUser({ email });
-        alert(error ? error.message : "Confirmation link sent to new email.");
-    }
-
-    async function updatePassword() {
         const password = document.getElementById('newPass').value;
-        const { error } = await sbClient.auth.updateUser({ password });
-        alert(error ? error.message : "Password updated!");
+        const updates = {};
+        if(email) updates.email = email;
+        if(password) updates.password = password;
+        const { error } = await sbClient.auth.updateUser(updates);
+        alert(error ? error.message : "Profile updated successfully!");
     }
 
     function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
