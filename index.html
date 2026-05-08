@@ -3,479 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Petty Cash RT 001/001 Jatimurni</title>
+    <title>Admin Dashboard - RT 001/001</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #f4f7f6; --white: #fff; --green: #27ae60; --red: #c0392b; --blue: #1e3799; --dark: #2c3e50; }
+        :root { --bg: #f4f7f6; --white: #fff; --green: #27ae60; --red: #c0392b; --blue: #1e3799; --dark: #2c3e50; --orange: #f39c12; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: var(--bg); padding: 15px; display: flex; justify-content: center; color: #333; }
         .container { width: 100%; max-width: 480px; background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); position: relative; }
-        
-        .app-brand { font-family: 'Georgia', serif; font-size: 22px; font-weight: bold; color: var(--blue); letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; justify-content: center; text-align: center; }
-        .app-address { font-size: 11px; color: #777; text-align: center; margin-bottom: 20px; line-height: 1.4; }
-
-        #loginScreen { text-align: center; padding: 20px 0; }
+        .app-brand { font-family: 'Georgia', serif; font-size: 22px; font-weight: bold; color: var(--blue); text-align: center; margin-bottom: 5px; }
+        .app-address { font-size: 11px; color: #777; text-align: center; margin-bottom: 20px; }
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; }
-        .btn { background: var(--blue); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:hover { filter: brightness(0.9); }
-        #appScreen { display: none; }
+        .btn { background: var(--blue); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-approve { background: var(--green); padding: 6px 12px; font-size: 12px; width: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .month-filter { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
-        .filter-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
-        .date-range-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #d0e5ee; padding-bottom: 15px; }
         .card { background: #fdfdfd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eaeaea; text-align: center; }
         .balance { font-size: 28px; font-weight: bold; }
         .plus { color: var(--green); } .minus { color: var(--red); }
-        .list-item { display: flex; justify-content: space-between; padding: 12px; background: white; border-left: 5px solid; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; }
-        .timestamp { font-size: 11px; color: #888; display: block; margin-top: 4px;}
-        .del-btn { color: #ccc; border: none; background: none; font-size: 18px; cursor: pointer; padding-left: 10px; }
-        .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; display: flex; justify-content: center; align-items: center;}
-        
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 15px; }
-        .modal-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
-
+        .list-item { display: flex; justify-content: space-between; padding: 12px; background: white; border-left: 5px solid; margin-bottom: 10px; border-radius: 6px; border: 1px solid #f0f0f0; }
+        .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; }
+        .pending-box { background: #fff4e5; padding: 15px; border-radius: 10px; border: 1px solid #ffe0b2; margin-bottom: 20px; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 15px; }
+        .modal-content { background: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
         .setting-section { border-top: 1px solid #eee; margin-top: 15px; padding-top: 10px; }
-        .setting-section h4 { margin-bottom: 10px; font-size: 14px; color: var(--dark); }
-        label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
-
-        #printHeader { display: none; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        
-        @media print {
-            body { background: #fff; padding: 0; }
-            .container { box-shadow: none; max-width: 100%; width: 100%; border: none; padding: 0; }
-            #txForm, .logout-btn, #btnPdf, .month-filter, .del-btn, .header, .modal, #settingsBtn { display: none !important; }
-            #printHeader { display: block; }
-            .list-item { break-inside: avoid; border: 1px solid #ddd; }
-        }
+        label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
+        @media print { .no-print { display: none !important; } #printHeader { display: block !important; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <div id="loginScreen">
         <div class="app-brand">🏘️ PETTY CASH RT 001 / RW 001</div>
-        <div class="app-address">Jatimurni, Pondok Melati, Bekasi City</div>
-        <h2 id="loginTitle" style="margin-bottom: 15px; font-size: 18px; color: #555;">Resident Fund Information System</h2>
-        
-        <input type="email" id="email" placeholder="Admin Email" required>
+        <h2 id="txtLoginTitle" style="text-align:center; font-size:16px; margin-bottom:15px;">Admin Login</h2>
+        <input type="email" id="email" placeholder="Email" required>
         <input type="password" id="password" placeholder="Password" required>
-        
-        <button id="authBtn" class="btn" onclick="handleAuth()">Login</button>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px dashed #ccc;">
-            <p id="authToggleText" style="font-size: 14px; margin: 0;">
-                <span id="txtNewAdmin">New Admin?</span> <br>
-                <a href="javascript:void(0)" id="txtRegLink" onclick="toggleAuthMode('register')" style="color: var(--blue); font-weight: bold; display: inline-block; margin-top: 8px;">Register Account</a>
-            </p>
-        </div>
-        <div id="langSwitchLogin" style="margin-top:15px; font-size:12px;">
-            <a href="javascript:void(0)" onclick="changeLang('en')">English</a> | 
-            <a href="javascript:void(0)" onclick="changeLang('id')">Indonesia</a>
-        </div>
-        <p id="loginError" style="color:red; font-size:13px; margin-top:15px; display:none; background: #ffebeb; padding: 10px; border-radius: 5px;"></p>
+        <button id="btnAuth" class="btn" onclick="handleAuth()">Login</button>
+        <p id="authToggle" style="font-size:12px; text-align:center; cursor:pointer; color:var(--blue); margin-top:10px;" onclick="toggleAuthMode()">Register New Admin</p>
     </div>
 
-    <div id="appScreen">
-        <div class="app-brand">PETTY CASH RT 001 / RW 001</div>
-        <div class="app-address">Jatimurni, Pondok Melati, Bekasi City</div>
-
-        <div id="printHeader">
-            <h2 id="printDocTitle">CASH REPORT RT 001 / RW 001 JATIMURNI</h2>
-            <p id="printPeriodeText">Period: -</p>
-        </div>
-
+    <div id="appScreen" style="display:none;">
         <div class="header">
-            <h3 id="txtCashflow">Cashflow</h3>
-            <button id="settingsBtn" onclick="openSettings()" style="width:auto; padding:6px 12px; font-size:13px; border:none; background:var(--dark); color:white; font-weight:bold; cursor:pointer; border-radius:5px;">⚙️ Settings</button>
+            <h3 id="txtAppName">Cashflow Dashboard</h3>
+            <button onclick="openSettings()" style="width:auto; padding:5px 10px; font-size:12px;">⚙️ Settings</button>
         </div>
 
-        <div class="month-filter">
-            <div class="date-range-container">
-                <div class="filter-group">
-                    <b id="lblStart">Start:</b>
-                    <input type="date" id="startDate" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
-                </div>
-                <div class="filter-group">
-                    <b id="lblEnd">End:</b>
-                    <input type="date" id="endDate" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
-                </div>
-            </div>
-            <div class="filter-group">
-                <b id="lblType">Type:</b>
-                <select id="typeFilter" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
-                    <option id="optAll" value="all">All</option>
-                    <option id="optFilterCredit" value="plus">Income (Fees/Donations)</option>
-                    <option id="optFilterDebit" value="minus">Expense (Activity/Social)</option>
-                </select>
-            </div>
+        <div id="pendingBox" class="pending-box">
+            <h4 id="txtPendingTitle" style="color:var(--orange); font-size:14px; margin-bottom:10px;">🔔 Pending Requests</h4>
+            <div id="pendingList"></div>
         </div>
 
         <div class="card">
-            <div id="saldoAwalText" style="font-size:12px; color:#777; margin-bottom:5px;">Opening Balance: Rp 0</div>
+            <div id="txtOpenBal" style="font-size:12px; color:#777;">Opening Balance:</div>
             <div class="balance" id="totalSaldo">Rp 0</div>
-            <div style="display:flex; justify-content: space-around; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                <div><small id="txtTotalIn">Total In</small><p class="plus" id="inc">+0</p></div>
-                <div><small id="txtTotalOut">Total Out</small><p class="minus" id="exp">-0</p></div>
+            <div style="display:flex; justify-content: space-around; margin-top:10px;">
+                <div><small id="txtIn">Total In</small><p class="plus" id="inc">+0</p></div>
+                <div><small id="txtOut">Total Out</small><p class="minus" id="exp">-0</p></div>
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="cashflowChart"></canvas>
-            <p id="noChartData" style="display: none; position: absolute; color: #999; font-size: 13px;">No data available</p>
-        </div>
+        <div class="chart-container"><canvas id="cashflowChart"></canvas></div>
 
-        <form id="txForm">
-            <div style="display: flex; gap: 10px;">
-                <select id="jenis" style="flex: 1;">
-                    <option id="optIn" value="plus">Income (+)</option>
-                    <option id="optOut" value="minus">Expense (-)</option>
-                </select>
-                <input type="number" id="jml" placeholder="Amount (Rp)" style="flex: 2;" required>
+        <form id="txForm" class="no-print">
+            <div style="display:flex; gap:5px;">
+                <select id="jenis" style="flex:1;"><option value="plus">Income (+)</option><option value="minus">Expense (-)</option></select>
+                <input type="number" id="jml" placeholder="Amount" style="flex:2;" required>
             </div>
-            <input type="text" id="ket" placeholder="Description (e.g. Monthly Fee Mr. Ahmad)" required>
-            <button id="saveBtn" type="submit" class="btn">Save Transaction</button>
+            <input type="text" id="ket" placeholder="Description" required>
+            <button type="submit" class="btn" id="btnSave">Save Transaction</button>
         </form>
 
-        <h4 id="txtHistoryTitle" style="margin-top:20px; margin-bottom: 10px;">Transaction History</h4>
+        <h4 id="txtHistTitle" style="margin:20px 0 10px;">History</h4>
         <div id="list"></div>
-
-        <button id="btnPdf" class="btn" style="background-color: var(--dark); margin-top: 20px;" onclick="window.print()">📄 Print Report / Save PDF</button>
+        <button class="btn no-print" style="background:var(--dark); margin-top:10px;" onclick="window.print()">📄 Print Report</button>
     </div>
 
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeSettings()">&times;</span>
-            <h2 id="txtSettingsTitle">Settings</h2>
-            
+            <h3 id="txtSettTitle">Settings</h3>
             <div class="setting-section">
-                <h4 id="txtLangTitle">🌐 Language</h4>
+                <label id="lblLang">Language</label>
                 <select id="langSelect" onchange="changeLang(this.value)">
                     <option value="en">English</option>
                     <option value="id">Indonesia</option>
                 </select>
             </div>
-
             <div class="setting-section">
-                <h4 id="txtAccountTitle">👤 Account Management</h4>
-                <label id="lblCurrEmail">Current Email:</label>
-                <input type="text" id="currentEmail" disabled style="background:#f0f0f0;">
-                
-                <label id="lblNewEmail">New Email:</label>
-                <input type="email" id="newEmail" placeholder="Enter new email">
-                <button class="btn" style="background:var(--blue); font-size:12px; padding:8px;" onclick="updateEmail()" id="btnUpdateEmail">Update Email</button>
-
-                <label id="lblNewPass">New Password:</label>
+                <label id="lblEmail">Update Email</label>
+                <input type="email" id="newEmail" placeholder="New Email">
+                <button class="btn" style="padding:8px; font-size:12px;" onclick="updateEmail()">Update</button>
+                <label id="lblPass">Update Password</label>
                 <input type="password" id="newPass" placeholder="Min 6 characters">
-                <button class="btn" style="background:var(--blue); font-size:12px; padding:8px;" onclick="updatePassword()" id="btnUpdatePass">Update Password</button>
+                <button class="btn" style="padding:8px; font-size:12px;" onclick="updatePassword()">Update</button>
             </div>
-
-            <div class="setting-section">
-                <button class="btn" style="background:var(--red);" onclick="logout()" id="btnLogout">Logout</button>
-            </div>
+            <button class="btn" style="background:var(--red); margin-top:15px;" onclick="logout()">Logout</button>
+            <button class="btn" style="background:#ccc; color:#333;" onclick="closeSettings()">Close</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- SUPABASE CONFIG ---
     const SB_URL = 'https://ltndiinbhxpstzkfroqc.supabase.co';
     const SB_KEY = 'sb_publishable_nhL1q3f6pZvD396R-T_N9Q_JE996i25';
     const sbClient = supabase.createClient(SB_URL, SB_KEY);
 
     let authMode = 'login';
-    let myChart = null;
     let currentLang = localStorage.getItem('lang') || 'en';
+    let myChart = null;
 
-    // --- TRANSLATION DATA ---
     const i18n = {
         en: {
-            loginTitle: "Resident Fund Information System",
-            emailPlc: "Admin Email",
-            passPlc: "Password",
-            loginBtn: "Login",
-            regBtn: "Register Now",
-            newAdmin: "New Admin?",
-            regLink: "Register Account",
-            cashflow: "Cashflow",
-            settings: "⚙️ Settings",
-            start: "Start:",
-            end: "End:",
-            type: "Type:",
-            all: "All",
-            incType: "Income (Fees/Donations)",
-            expType: "Expense (Activity/Social)",
-            openBal: "Opening Balance: ",
-            totalIn: "Total In",
-            totalOut: "Total Out",
-            noData: "No data available",
-            saveBtn: "Save Transaction",
-            histTitle: "Transaction History",
-            printBtn: "📄 Print Report / Save PDF",
-            settTitle: "Settings",
-            langTitle: "🌐 Language",
-            accTitle: "👤 Account Management",
-            currEmail: "Current Email:",
-            newEmail: "New Email:",
-            newPass: "New Password:",
-            updEmail: "Update Email",
-            updPass: "Update Password",
-            logout: "Logout",
-            descPlc: "Description (e.g. Monthly Fee Mr. Ahmad)",
-            amtPlc: "Amount (Rp)",
-            confirmDel: "Delete this transaction?",
-            passPrompt: "Please re-enter your password for security:",
-            wrongPass: "Incorrect Password!",
-            approveAlert: "Account registered. Waiting for approval from RT Head.",
-            updEmailSuccess: "Email update request sent! Check your email for verification.",
-            updPassSuccess: "Password updated successfully!"
+            login: "Admin Login", reg: "Register Admin", btnLogin: "Login", btnReg: "Register Now",
+            pending: "🔔 Pending Requests", none: "No pending requests", openBal: "Opening Balance: ",
+            totalIn: "Total In", totalOut: "Total Out", save: "Save Transaction", history: "History",
+            appName: "Cashflow Dashboard", settings: "Settings", lang: "Language", updEmail: "Update Email",
+            updPass: "Update Password", logout: "Logout"
         },
         id: {
-            loginTitle: "Sistem Informasi Kas Warga",
-            emailPlc: "Email Pengurus",
-            passPlc: "Kata Sandi",
-            loginBtn: "Masuk",
-            regBtn: "Daftar Sekarang",
-            newAdmin: "Pengurus Baru?",
-            regLink: "Daftar Akun",
-            cashflow: "Arus Kas",
-            settings: "⚙️ Pengaturan",
-            start: "Mulai:",
-            end: "Sampai:",
-            type: "Tipe:",
-            all: "Semua",
-            incType: "Pemasukan (Iuran/Sumbangan)",
-            expType: "Pengeluaran (Kegiatan/Sosial)",
-            openBal: "Saldo Awal: ",
-            totalIn: "Total Masuk",
-            totalOut: "Total Keluar",
-            noData: "Belum ada data",
-            saveBtn: "Simpan Transaksi",
-            histTitle: "Riwayat Transaksi",
-            printBtn: "📄 Cetak Laporan / PDF",
-            settTitle: "Pengaturan",
-            langTitle: "🌐 Bahasa",
-            accTitle: "👤 Manajemen Akun",
-            currEmail: "Email Sekarang:",
-            newEmail: "Email Baru:",
-            newPass: "Sandi Baru:",
-            updEmail: "Perbarui Email",
-            updPass: "Perbarui Sandi",
-            logout: "Keluar",
-            descPlc: "Keterangan (Contoh: Iuran Bpk Ahmad)",
-            amtPlc: "Jumlah (Rp)",
-            confirmDel: "Hapus transaksi ini?",
-            passPrompt: "Masukkan kembali sandi Anda untuk konfirmasi:",
-            wrongPass: "Sandi Salah!",
-            approveAlert: "Akun terdaftar. Perlu persetujuan Ketua RT.",
-            updEmailSuccess: "Permintaan ganti email dikirim! Cek email Anda.",
-            updPassSuccess: "Sandi berhasil diperbarui!"
+            login: "Login Pengurus", reg: "Daftar Pengurus", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
+            pending: "🔔 Menunggu Persetujuan", none: "Tidak ada antrean", openBal: "Saldo Awal: ",
+            totalIn: "Total Masuk", totalOut: "Total Keluar", save: "Simpan Transaksi", history: "Riwayat",
+            appName: "Dashboard Kas", settings: "Pengaturan", lang: "Bahasa", updEmail: "Ganti Email",
+            updPass: "Ganti Password", logout: "Keluar"
         }
     };
 
     function applyLang() {
         const t = i18n[currentLang];
-        document.getElementById('loginTitle').innerText = (authMode === 'login') ? t.loginTitle : (currentLang === 'en' ? 'Register Admin Account' : 'Daftar Akun Pengurus');
-        document.getElementById('email').placeholder = t.emailPlc;
-        document.getElementById('password').placeholder = t.passPlc;
-        document.getElementById('authBtn').innerText = (authMode === 'login') ? t.loginBtn : t.regBtn;
-        document.getElementById('txtNewAdmin').innerText = t.newAdmin;
-        document.getElementById('txtRegLink').innerText = t.regLink;
-        
-        document.getElementById('txtCashflow').innerText = t.cashflow;
-        document.getElementById('settingsBtn').innerText = t.settings;
-        document.getElementById('lblStart').innerText = t.start;
-        document.getElementById('lblEnd').innerText = t.end;
-        document.getElementById('lblType').innerText = t.type;
-        document.getElementById('optAll').innerText = t.all;
-        document.getElementById('optFilterCredit').innerText = t.incType;
-        document.getElementById('optFilterDebit').innerText = t.expType;
-        document.getElementById('txtTotalIn').innerText = t.totalIn;
-        document.getElementById('txtTotalOut').innerText = t.totalOut;
-        document.getElementById('noChartData').innerText = t.noData;
-        document.getElementById('optIn').innerText = (currentLang === 'en' ? 'Income (+)' : 'Pemasukan (+)');
-        document.getElementById('optOut').innerText = (currentLang === 'en' ? 'Expense (-)' : 'Pengeluaran (-)');
-        document.getElementById('jml').placeholder = t.amtPlc;
-        document.getElementById('ket').placeholder = t.descPlc;
-        document.getElementById('saveBtn').innerText = t.saveBtn;
-        document.getElementById('txtHistoryTitle').innerText = t.histTitle;
-        document.getElementById('btnPdf').innerText = t.printBtn;
-        
-        document.getElementById('txtSettingsTitle').innerText = t.settTitle;
-        document.getElementById('txtLangTitle').innerText = t.langTitle;
-        document.getElementById('txtAccountTitle').innerText = t.accTitle;
-        document.getElementById('lblCurrEmail').innerText = t.currEmail;
-        document.getElementById('lblNewEmail').innerText = t.newEmail;
-        document.getElementById('lblNewPass').innerText = t.newPass;
-        document.getElementById('btnUpdateEmail').innerText = t.updEmail;
-        document.getElementById('btnUpdatePass').innerText = t.updPass;
-        document.getElementById('btnLogout').innerText = t.logout;
-        
+        document.getElementById('txtLoginTitle').innerText = (authMode === 'login') ? t.login : t.reg;
+        document.getElementById('btnAuth').innerText = (authMode === 'login') ? t.btnLogin : t.btnReg;
+        document.getElementById('txtPendingTitle').innerText = t.pending;
+        document.getElementById('txtOpenBal').innerText = t.openBal;
+        document.getElementById('txtIn').innerText = t.totalIn;
+        document.getElementById('txtOut').innerText = t.totalOut;
+        document.getElementById('btnSave').innerText = t.save;
+        document.getElementById('txtHistTitle').innerText = t.history;
+        document.getElementById('txtAppName').innerText = t.appName;
+        document.getElementById('txtSettTitle').innerText = t.settings;
+        document.getElementById('lblLang').innerText = t.lang;
+        document.getElementById('lblEmail').innerText = t.updEmail;
+        document.getElementById('lblPass').innerText = t.updPass;
         document.getElementById('langSelect').value = currentLang;
         fetchData();
+        fetchPending();
     }
 
-    function changeLang(lang) {
-        currentLang = lang;
-        localStorage.setItem('lang', lang);
-        applyLang();
-    }
+    function changeLang(l) { currentLang = l; localStorage.setItem('lang', l); applyLang(); }
 
-    // --- AUTH FUNCTIONS ---
     async function checkUser() {
         const { data: { session } } = await sbClient.auth.getSession();
         if (session) {
-            const { data: profile } = await sbClient.from('profiles').select('is_approved').eq('id', session.user.id).single();
-            if (profile && profile.is_approved) {
+            const { data: prof } = await sbClient.from('profiles').select('is_approved').eq('id', session.user.id).single();
+            if (prof?.is_approved) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appScreen').style.display = 'block';
-                document.getElementById('currentEmail').value = session.user.email;
                 applyLang();
-            } else {
-                await sbClient.auth.signOut();
-                alert(i18n[currentLang].approveAlert);
-            }
-        } else {
-            applyLang();
-        }
+            } else { await sbClient.auth.signOut(); alert("Account needs RT approval."); }
+        } else { applyLang(); }
     }
 
     async function handleAuth() {
         const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const errEl = document.getElementById('loginError');
-
+        const pass = document.getElementById('password').value;
         if (authMode === 'login') {
-            const { error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) { errEl.innerText = error.message; errEl.style.display = 'block'; }
-            else { location.reload(); }
+            const { error } = await sbClient.auth.signInWithPassword({ email, password: pass });
+            if (error) alert(error.message); else location.reload();
         } else {
-            const { error } = await sbClient.auth.signUp({ email, password });
-            if (error) { errEl.innerText = error.message; errEl.style.display = 'block'; }
-            else { alert(i18n[currentLang].approveAlert); toggleAuthMode('login'); }
+            const { error } = await sbClient.auth.signUp({ email, password: pass });
+            if (error) alert(error.message); else alert("Registered! Wait for RT approval.");
         }
     }
 
-    function toggleAuthMode(mode) {
-        authMode = mode;
+    function toggleAuthMode() {
+        authMode = (authMode === 'login') ? 'register' : 'login';
         applyLang();
     }
 
-    // --- ACCOUNT UPDATE FUNCTIONS ---
-    async function updateEmail() {
-        const newEmail = document.getElementById('newEmail').value;
-        if(!newEmail) return;
-        const { error } = await sbClient.auth.updateUser({ email: newEmail });
-        if (error) alert(error.message);
-        else alert(i18n[currentLang].updEmailSuccess);
-    }
-
-    async function updatePassword() {
-        const newPass = document.getElementById('newPass').value;
-        if(newPass.length < 6) return alert("Password too short!");
-        const { error } = await sbClient.auth.updateUser({ password: newPass });
-        if (error) alert(error.message);
-        else alert(i18n[currentLang].updPassSuccess);
-    }
-
-    // --- DATA FUNCTIONS ---
     async function fetchData() {
-        const startVal = document.getElementById('startDate').value;
-        const endVal = document.getElementById('endDate').value;
-        const selType = document.getElementById('typeFilter').value;
-        
-        const { data, error } = await sbClient.from('transaksi').select('*').order('created_at', { ascending: false });
+        const { data, error } = await sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
         if (error) return;
-
-        let sAwal = 0, incTotal = 0, expTotal = 0;
-        const listHtml = document.getElementById('list');
-        listHtml.innerHTML = '';
-
+        let inc = 0, exp = 0;
+        const list = document.getElementById('list');
+        list.innerHTML = '';
         data.forEach(tr => {
-            const trDate = tr.created_at.slice(0, 10);
             const amt = parseFloat(tr.jumlah);
-            
-            if (trDate < startVal) {
-                tr.jenis === 'plus' ? sAwal += amt : sAwal -= amt;
-            } else if (trDate >= startVal && trDate <= endVal) {
-                tr.jenis === 'plus' ? incTotal += amt : expTotal += amt;
-                if (selType === 'all' || selType === tr.jenis) {
-                    const dateStr = new Date(tr.created_at).toLocaleDateString(currentLang === 'id' ? 'id-ID' : 'en-US', {day:'2-digit', month:'short', year:'numeric'});
-                    listHtml.innerHTML += `
-                        <div class="list-item" style="border-left-color:${tr.jenis === 'plus' ? '#27ae60' : '#c0392b'}">
-                            <div><b>${tr.keterangan}</b><span class="timestamp">${dateStr}</span></div>
-                            <div style="display:flex; align-items:center;">
-                                <span class="${tr.jenis}" style="font-weight:bold;">Rp ${amt.toLocaleString('id-ID')}</span>
-                                <button class="del-btn" onclick="hapus(${tr.id})">✖</button>
-                            </div>
-                        </div>`;
-                }
-            }
+            tr.jenis === 'plus' ? inc += amt : exp += amt;
+            list.innerHTML += `<div class="list-item" style="border-left-color:${tr.jenis==='plus'?'#27ae60':'#c0392b'}">
+                <div><b>${tr.keterangan}</b><br><small>${new Date(tr.created_at).toLocaleDateString()}</small></div>
+                <div class="${tr.jenis}"><b>Rp ${amt.toLocaleString()}</b></div>
+            </div>`;
         });
-
-        document.getElementById('saldoAwalText').innerText = `${i18n[currentLang].openBal} Rp ${sAwal.toLocaleString('id-ID')}`;
-        document.getElementById('totalSaldo').innerText = `Rp ${(sAwal + incTotal - expTotal).toLocaleString('id-ID')}`;
-        document.getElementById('inc').innerText = `+Rp ${incTotal.toLocaleString('id-ID')}`;
-        document.getElementById('exp').innerText = `-Rp ${expTotal.toLocaleString('id-ID')}`;
-        renderChart(incTotal, expTotal);
-        document.getElementById('printPeriodeText').innerText = (currentLang === 'en' ? "Period: " : "Periode: ") + startVal + " - " + endVal;
+        document.getElementById('totalSaldo').innerText = `Rp ${(inc - exp).toLocaleString()}`;
+        document.getElementById('inc').innerText = `+Rp ${inc.toLocaleString()}`;
+        document.getElementById('exp').innerText = `-Rp ${exp.toLocaleString()}`;
+        renderChart(inc, exp);
     }
 
-    function renderChart(income, expense) {
-        const ctx = document.getElementById('cashflowChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        if (income === 0 && expense === 0) {
-            document.getElementById('noChartData').style.display = 'block';
-            return;
-        }
-        document.getElementById('noChartData').style.display = 'none';
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: currentLang === 'en' ? ['In', 'Out'] : ['Masuk', 'Keluar'],
-                datasets: [{ data: [income, expense], backgroundColor: ['#27ae60', '#c0392b'] }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
+    async function fetchPending() {
+        const { data } = await sbClient.from('transaksi').select('*').eq('status', 'pending');
+        const container = document.getElementById('pendingList');
+        container.innerHTML = (data?.length === 0) ? `<small>${i18n[currentLang].none}</small>` : '';
+        data?.forEach(tr => {
+            container.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:5px; border-bottom:1px solid #eee;">
+                <div style="font-size:12px;"><b>${tr.keterangan}</b><br>Rp ${parseFloat(tr.jumlah).toLocaleString()}</div>
+                <button class="btn btn-approve" onclick="approveTx(${tr.id})">Approve</button>
+            </div>`;
         });
+    }
+
+    async function approveTx(id) {
+        await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id);
+        fetchData(); fetchPending();
     }
 
     document.getElementById('txForm').onsubmit = async (e) => {
         e.preventDefault();
-        const dataInsert = {
+        const { error } = await sbClient.from('transaksi').insert([{
             keterangan: document.getElementById('ket').value,
             jumlah: document.getElementById('jml').value,
-            jenis: document.getElementById('jenis').value
-        };
-        const { error } = await sbClient.from('transaksi').insert([dataInsert]);
+            jenis: document.getElementById('jenis').value,
+            status: 'approved'
+        }]);
         if (!error) { e.target.reset(); fetchData(); }
-        else { alert("Error saving data!"); }
     };
 
-    async function hapus(id) {
-        if (!confirm(i18n[currentLang].confirmDel)) return;
-        const pass = prompt(i18n[currentLang].passPrompt);
-        if (!pass) return;
-        
-        const { data: { session } } = await sbClient.auth.getSession();
-        const { error: authErr } = await sbClient.auth.signInWithPassword({ email: session.user.email, password: pass });
-        
-        if (authErr) { alert(i18n[currentLang].wrongPass); return; }
-        
-        await sbClient.from('transaksi').delete().eq('id', id);
-        fetchData();
+    function renderChart(i, e) {
+        const ctx = document.getElementById('cashflowChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: ['In', 'Out'], datasets: [{ data: [i, e], backgroundColor: ['#27ae60', '#c0392b'] }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    async function updateEmail() {
+        const email = document.getElementById('newEmail').value;
+        const { error } = await sbClient.auth.updateUser({ email });
+        alert(error ? error.message : "Confirmation link sent to new email.");
+    }
+
+    async function updatePassword() {
+        const password = document.getElementById('newPass').value;
+        const { error } = await sbClient.auth.updateUser({ password });
+        alert(error ? error.message : "Password updated!");
     }
 
     function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     async function logout() { await sbClient.auth.signOut(); location.reload(); }
 
-    // Init dates
-    const now = new Date();
-    document.getElementById('startDate').value = now.toISOString().slice(0, 8) + '01';
-    document.getElementById('endDate').value = now.toISOString().slice(0, 10);
-    
     checkUser();
 </script>
 </body>
