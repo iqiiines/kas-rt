@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Executive Admin Dashboard - RT 001/001</title>
+    <title>Admin Dashboard - RT 001/ RW 001</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -43,17 +43,15 @@
             position: relative;
         }
 
-        /* Luxury Header */
         .app-header { text-align: center; margin-bottom: 30px; }
         .app-brand { font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
         .app-address { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-        /* Login Styling */
         #loginScreen h2 { font-size: 18px; margin-bottom: 20px; color: var(--text-main); }
         input, select { 
             width: 100%; padding: 14px; margin: 10px 0; 
             border-radius: 12px; border: 1px solid #e2e8f0; 
-            background: #f1f5f9; transition: 0.3s;
+            background: #f1f5f9; transition: 0.3s; color: var(--text-main);
         }
         input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
 
@@ -64,8 +62,8 @@
         }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-action { width: 32px; height: 32px; padding: 0; border-radius: 8px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
         
-        /* Dashboard Components */
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .section-title { font-weight: 700; font-size: 18px; }
 
@@ -83,7 +81,6 @@
         .stat-val { font-weight: 700; font-size: 14px; }
         .stat-label { font-size: 10px; opacity: 0.7; }
 
-        /* Real-time Notification Box */
         .pending-box { 
             background: #fffbeb; border: 1px solid #fef3c7; 
             padding: 15px; border-radius: 16px; margin-bottom: 25px;
@@ -91,29 +88,59 @@
         }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* List Items */
         .list-item { 
             background: #fff; border: 1px solid #f1f5f9; 
             padding: 16px; border-radius: 16px; margin-bottom: 12px;
             display: flex; justify-content: space-between; align-items: center;
-            transition: 0.2s;
+            transition: 0.2s; gap: 10px;
         }
         .list-item:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 
-        /* Modal Settings */
         .modal { 
             display: none; position: fixed; z-index: 1000; 
             left: 0; top: 0; width: 100%; height: 100%; 
             background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
             align-items: center; justify-content: center; padding: 20px;
         }
-        .modal-content { 
-            background: white; padding: 30px; border-radius: 24px; 
-            width: 100%; max-width: 400px;
-        }
+        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; }
 
-        .no-print { display: block; }
-        @media print { .no-print { display: none !important; } }
+        .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
+        
+        /* ---------------- PRINT LAYOUT (LUXURY) ---------------- */
+        #printReportLayout { display: none; }
+        
+        @media print {
+            @page { margin: 20mm; }
+            body { background: white; padding: 0; display: block; }
+            .no-print { display: none !important; }
+            .container { box-shadow: none; max-width: 100%; border-radius: 0; padding: 0; }
+            
+            #appScreen > *:not(#printReportLayout) { display: none !important; }
+            #printReportLayout { display: block !important; width: 100%; color: #1e293b; }
+            
+            .print-header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 30px; }
+            .print-brand { font-size: 28pt; font-weight: 800; color: #1e293b; letter-spacing: -1px; text-transform: uppercase; }
+            .print-address { font-size: 10pt; color: #64748b; margin-top: 5px; }
+            
+            .print-summary-box { 
+                display: flex; justify-content: space-between; 
+                background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px;
+            }
+            .print-sum-item { text-align: center; flex: 1; }
+            .print-sum-item:not(:last-child) { border-right: 1px solid #e2e8f0; }
+            .print-sum-label { font-size: 9pt; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+            .print-sum-val { font-size: 16pt; font-weight: 700; color: #1e293b; }
+            
+            .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+            .print-table th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #cbd5e1; }
+            .print-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+            .print-row-in { color: #10b981 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+            .print-row-out { color: #ef4444 !important; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+            
+            .print-footer { margin-top: 50px; text-align: right; font-size: 10pt; color: #64748b; }
+        }
     </style>
 </head>
 <body>
@@ -132,12 +159,50 @@
     </div>
 
     <div id="appScreen" style="display:none;">
-        <div class="section-header">
+        
+        <div id="printReportLayout">
+            <div class="print-header">
+                <div class="print-brand">Financial Report</div>
+                <div class="print-address">Petty Cash RT 001/001 - Jatimurni, Bekasi</div>
+                <div class="print-address" id="printDateGenerated">Generated on: </div>
+            </div>
+            
+            <div class="print-summary-box">
+                <div class="print-sum-item">
+                    <div class="print-sum-label">Total Income</div>
+                    <div class="print-sum-val" id="printInc">Rp 0</div>
+                </div>
+                <div class="print-sum-item">
+                    <div class="print-sum-label">Total Expense</div>
+                    <div class="print-sum-val" id="printExp">Rp 0</div>
+                </div>
+                <div class="print-sum-item">
+                    <div class="print-sum-label">Net Balance</div>
+                    <div class="print-sum-val" id="printBal">Rp 0</div>
+                </div>
+            </div>
+
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th style="text-align:right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="printTableBody"></tbody>
+            </table>
+            
+            <div class="print-footer">
+                Authorized by RT 001/001 Administrator
+            </div>
+        </div>
+        <div class="section-header no-print">
             <h3 class="section-title" id="txtAppName">Financial Overview</h3>
             <button onclick="openSettings()" class="btn" style="width:auto; padding:8px 12px; background:#f1f5f9; color:var(--text-main); font-size:12px;">⚙️ Settings</button>
         </div>
 
-        <div id="pendingBox" class="pending-box" style="display:none;">
+        <div id="pendingBox" class="pending-box no-print" style="display:none;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
                 <span style="font-size:18px;">🔔</span>
                 <h4 id="txtPendingTitle" style="color:var(--warning); font-size:14px; font-weight:700;">Approval Queue</h4>
@@ -145,7 +210,7 @@
             <div id="pendingList"></div>
         </div>
 
-        <div class="card-stats">
+        <div class="card-stats no-print">
             <div class="balance-label" id="txtOpenBal">Available Balance</div>
             <div class="balance-value" id="totalSaldo">Rp 0</div>
             <div class="stats-grid">
@@ -160,7 +225,7 @@
             </div>
         </div>
 
-        <div class="chart-container"><canvas id="cashflowChart"></canvas></div>
+        <div class="chart-container no-print"><canvas id="cashflowChart"></canvas></div>
 
         <form id="txForm" class="no-print" style="margin-top:20px;">
             <div style="display:flex; gap:8px;">
@@ -171,13 +236,28 @@
             <button type="submit" class="btn btn-primary" id="btnSave">Record Transaction</button>
         </form>
 
-        <h4 id="txtHistTitle" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
-        <div id="list"></div>
+        <h4 id="txtHistTitle" class="no-print" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
+        <div id="list" class="no-print"></div>
         
-        <button class="btn no-print" style="background:#1e293b; color:white; margin-top:20px;" onclick="window.print()">📄 Generate Report</button>
+        <button class="btn no-print" style="background:#1e293b; color:white; margin-top:20px;" onclick="generateReport()">📄 Generate Report</button>
     </div>
 
-    <div id="settingsModal" class="modal">
+    <div id="editModal" class="modal no-print">
+        <div class="modal-content">
+            <h3 style="margin-bottom:20px;">Edit Transaction</h3>
+            <input type="hidden" id="editId">
+            <select id="editJenis">
+                <option value="plus">Income (+)</option>
+                <option value="minus">Expense (-)</option>
+            </select>
+            <input type="number" id="editJml" placeholder="Amount (Rp)">
+            <input type="text" id="editKet" placeholder="Description">
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="saveEdit()">Update Transaction</button>
+            <button class="btn" style="background:#f1f5f9; color:var(--text-main); margin-top:10px;" onclick="closeEditModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal no-print">
         <div class="modal-content">
             <h3 style="margin-bottom:20px;" id="txtSettTitle">Settings</h3>
             
@@ -211,50 +291,39 @@
     let currentLang = localStorage.getItem('lang') || 'en';
     let myChart = null;
     let idleTimer;
+    let cachedTransactions = []; // For printing
 
     const i18n = {
         en: {
             login: "Admin Authentication", reg: "New Admin Registration", btnLogin: "Sign In", btnReg: "Create Account",
-            pending: "Approval Queue", none: "No requests pending", openBal: "Available Balance",
+            pending: "Approval Queue", openBal: "Available Balance",
             totalIn: "Income", totalOut: "Expense", save: "Record Transaction", history: "Recent History",
             appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out"
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
-            pending: "Antrean Persetujuan", none: "Tidak ada antrean", openBal: "Saldo Tersedia",
+            pending: "Antrean Persetujuan", openBal: "Saldo Tersedia",
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
             appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar"
         }
     };
 
-    // --- REALTIME & AUTO-LOGOUT LOGIC ---
-
     function setupRealtime() {
         sbClient
             .channel('any')
-            .on('postgres_changes', { event: '*', table: 'transaksi' }, (payload) => {
-                console.log('Change received!', payload);
-                fetchData();
-                fetchPending();
-            })
-            .subscribe();
+            .on('postgres_changes', { event: '*', table: 'transaksi' }, () => {
+                fetchData(); fetchPending();
+            }).subscribe();
     }
 
     function resetIdleTimer() {
         clearTimeout(idleTimer);
-        // Logout otomatis setelah 5 menit (300.000 ms)
-        idleTimer = setTimeout(() => {
-            alert("Session expired due to inactivity.");
-            logout();
-        }, 300000); 
+        idleTimer = setTimeout(() => { alert("Session expired."); logout(); }, 300000); 
     }
 
-    // Pantau aktivitas pengguna
     ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
         window.addEventListener(evt, resetIdleTimer, true);
     });
-
-    // --- CORE FUNCTIONS ---
 
     function applyLang() {
         const t = i18n[currentLang];
@@ -271,8 +340,7 @@
         document.getElementById('lblLang').innerText = t.lang;
         document.getElementById('btnLogout').innerText = t.logout;
         document.getElementById('langSelect').value = currentLang;
-        fetchData();
-        fetchPending();
+        fetchData(); fetchPending();
     }
 
     function changeLang(l) { currentLang = l; localStorage.setItem('lang', l); applyLang(); }
@@ -284,9 +352,7 @@
             if (prof?.is_approved) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appScreen').style.display = 'block';
-                setupRealtime();
-                resetIdleTimer();
-                applyLang();
+                setupRealtime(); resetIdleTimer(); applyLang();
             } else { await sbClient.auth.signOut(); alert("Wait for RT head approval."); }
         } else { applyLang(); }
     }
@@ -303,35 +369,49 @@
         }
     }
 
-    function toggleAuthMode() {
-        authMode = (authMode === 'login') ? 'register' : 'login';
-        applyLang();
-    }
+    function toggleAuthMode() { authMode = (authMode === 'login') ? 'register' : 'login'; applyLang(); }
 
     async function fetchData() {
         const { data, error } = await sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
         if (error) return;
+        cachedTransactions = data; 
+        
         let inc = 0, exp = 0;
         const list = document.getElementById('list');
         list.innerHTML = '';
+        
         data.forEach(tr => {
             const amt = parseFloat(tr.jumlah);
             tr.jenis === 'plus' ? inc += amt : exp += amt;
+            
+            // Clean payload for string escaping
+            const safeKet = tr.keterangan.replace(/'/g, "\\'");
+            
             list.innerHTML += `
                 <div class="list-item">
-                    <div>
+                    <div style="flex:1;">
                         <div style="font-weight:700; font-size:14px;">${tr.keterangan}</div>
                         <div style="font-size:11px; color:var(--text-muted);">${new Date(tr.created_at).toLocaleDateString()}</div>
                     </div>
-                    <div style="font-weight:700; color:${tr.jenis==='plus'?'var(--success)':'var(--danger)'}">
+                    <div style="font-weight:700; color:${tr.jenis==='plus'?'var(--success)':'var(--danger)'}; margin-right:15px; text-align:right;">
                         ${tr.jenis==='plus'?'+':'-'} Rp ${amt.toLocaleString()}
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-action" style="background:#f1f5f9; color:var(--primary);" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">✏️</button>
+                        <button class="btn btn-action" style="background:#fee2e2; color:var(--danger);" onclick="deleteTx(${tr.id})">🗑️</button>
                     </div>
                 </div>`;
         });
+        
         document.getElementById('totalSaldo').innerText = `Rp ${(inc - exp).toLocaleString()}`;
         document.getElementById('inc').innerText = `+Rp ${inc.toLocaleString()}`;
         document.getElementById('exp').innerText = `-Rp ${exp.toLocaleString()}`;
         renderChart(inc, exp);
+        
+        // Setup Print Values
+        document.getElementById('printInc').innerText = `Rp ${inc.toLocaleString()}`;
+        document.getElementById('printExp').innerText = `Rp ${exp.toLocaleString()}`;
+        document.getElementById('printBal').innerText = `Rp ${(inc - exp).toLocaleString()}`;
     }
 
     async function fetchPending() {
@@ -339,25 +419,57 @@
         const box = document.getElementById('pendingBox');
         const container = document.getElementById('pendingList');
         
-        if (!data || data.length === 0) {
-            box.style.display = 'none';
-            return;
-        }
-
+        if (!data || data.length === 0) { box.style.display = 'none'; return; }
         box.style.display = 'block';
         container.innerHTML = '';
+        
         data.forEach(tr => {
             container.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid #fef3c7;">
                     <div style="font-size:12px;"><b>${tr.keterangan}</b><br>Rp ${parseFloat(tr.jumlah).toLocaleString()}</div>
-                    <button class="btn btn-primary" style="width:auto; padding:6px 12px; font-size:11px; background:var(--success);" onclick="approveTx(${tr.id})">Approve</button>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-action" style="background:var(--success); color:white;" onclick="approveTx(${tr.id})" title="Approve">✓</button>
+                        <button class="btn btn-action" style="background:var(--danger); color:white;" onclick="rejectTx(${tr.id})" title="Reject">✕</button>
+                    </div>
                 </div>`;
         });
     }
 
-    async function approveTx(id) {
-        await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id);
-        // Data akan refresh otomatis via Realtime Channel
+    async function approveTx(id) { await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id); }
+    
+    // Fitur Reject (Tolak Laporan)
+    async function rejectTx(id) { 
+        if(confirm("Reject this submission?")) {
+            await sbClient.from('transaksi').delete().eq('id', id); 
+        }
+    }
+
+    // Fitur Delete di History
+    async function deleteTx(id) {
+        if(confirm("Are you sure you want to delete this transaction? This action cannot be undone.")) {
+            await sbClient.from('transaksi').delete().eq('id', id);
+        }
+    }
+
+    // Fitur Edit
+    function openEditModal(id, ket, jml, jenis) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editKet').value = ket;
+        document.getElementById('editJml').value = jml;
+        document.getElementById('editJenis').value = jenis;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+    
+    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+    
+    async function saveEdit() {
+        const id = document.getElementById('editId').value;
+        const ket = document.getElementById('editKet').value;
+        const jml = document.getElementById('editJml').value;
+        const jenis = document.getElementById('editJenis').value;
+        
+        await sbClient.from('transaksi').update({ keterangan: ket, jumlah: jml, jenis: jenis }).eq('id', id);
+        closeEditModal();
     }
 
     document.getElementById('txForm').onsubmit = async (e) => {
@@ -376,21 +488,32 @@
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { 
-                labels: ['Income', 'Expense'], 
-                datasets: [{ 
-                    data: [i, e], 
-                    backgroundColor: ['#10b981', '#ef4444'],
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 11 } } } }
-            }
+            data: { labels: ['Income', 'Expense'], datasets: [{ data: [i, e], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
+    }
+
+    // Generate Luxury Report
+    function generateReport() {
+        document.getElementById('printDateGenerated').innerText = "Generated on: " + new Date().toLocaleString();
+        
+        const tbody = document.getElementById('printTableBody');
+        tbody.innerHTML = '';
+        
+        cachedTransactions.forEach(tr => {
+            const isPlus = tr.jenis === 'plus';
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color:#64748b;">${new Date(tr.created_at).toLocaleDateString()}</td>
+                    <td style="font-weight:600;">${tr.keterangan}</td>
+                    <td style="text-align:right;" class="${isPlus ? 'print-row-in' : 'print-row-out'}">
+                        ${isPlus ? '+' : '-'} Rp ${parseFloat(tr.jumlah).toLocaleString()}
+                    </td>
+                </tr>
+            `;
+        });
+        
+        window.print();
     }
 
     async function updateProfile() {
