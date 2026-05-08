@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KAS RT 001/001 Jatimurni</title>
+    <title>Petty Cash RT 001/001 Jatimurni</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -35,6 +35,8 @@
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 15px; }
         .modal-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-modal { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .setting-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-top: 10px; }
 
         #printHeader { display: none; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
         
@@ -52,122 +54,263 @@
 <div class="container">
 
     <div id="loginScreen">
-        <div class="app-brand">🏘️ KAS RT 001 / RW 001</div>
-        <div class="app-address">Jatimurni, Pondok Melati, Kota Bekasi</div>
-        <h2 id="loginTitle" style="margin-bottom: 15px; font-size: 18px; color: #555;">Sistem Informasi Kas Warga</h2>
+        <div class="app-brand">🏘️ PETTY CASH RT 001/001</div>
+        <div class="app-address">Jatimurni, Pondok Melati, Bekasi City</div>
+        <h2 id="loginTitle" style="margin-bottom: 15px; font-size: 18px; color: #555;">Residents Financial Information System</h2>
         
-        <input type="email" id="email" placeholder="Email Pengurus" required>
+        <input type="email" id="email" placeholder="Admin Email" required>
         <input type="password" id="password" placeholder="Password" required>
         
-        <button id="authBtn" class="btn" onclick="handleAuth()">Masuk</button>
+        <button id="authBtn" class="btn" onclick="handleAuth()">Login</button>
         
         <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px dashed #ccc;">
             <p id="authToggleText" style="font-size: 14px; margin: 0;">
-                Pengurus Baru? <br><a href="javascript:void(0)" onclick="toggleAuthMode('register')" style="color: var(--blue); font-weight: bold; display: inline-block; margin-top: 8px;">Daftar Akun</a>
+                New Admin? <br><a href="javascript:void(0)" onclick="toggleAuthMode('register')" id="toggleLink" style="color: var(--blue); font-weight: bold; display: inline-block; margin-top: 8px;">Register Account</a>
             </p>
         </div>
         <p id="loginError" style="color:red; font-size:13px; margin-top:15px; display:none; background: #ffebeb; padding: 10px; border-radius: 5px;"></p>
     </div>
 
     <div id="appScreen">
-        <div class="app-brand">KAS RT 001 / RW 001</div>
-        <div class="app-address">Kel. Jatimurni, Kec. Pondok Melati, Kota Bekasi</div>
+        <div class="app-brand">PETTY CASH RT 001 / RW 001</div>
+        <div class="app-address">Jatimurni, Pondok Melati, Bekasi City</div>
 
         <div id="printHeader">
-            <h2>LAPORAN KAS RT 001 / RW 001 JATIMURNI</h2>
-            <p id="printPeriodeText">Periode: -</p>
+            <h2 id="printDocTitle">CASH REPORT RT 001 / RW 001 JATIMURNI</h2>
+            <p id="printPeriodeText">Period: -</p>
         </div>
 
         <div class="header">
             <h3 id="cashflowTitle">Cashflow</h3>
-            <button id="settingsBtn" onclick="openSettings()" style="width:auto; padding:6px 12px; font-size:13px; border:none; background:var(--dark); color:white; font-weight:bold; cursor:pointer; border-radius:5px;">⚙️ Pengaturan</button>
+            <button id="settingsBtn" onclick="openSettings()" style="width:auto; padding:6px 12px; font-size:13px; border:none; background:var(--dark); color:white; font-weight:bold; cursor:pointer; border-radius:5px;">⚙️ Settings</button>
         </div>
 
         <div class="month-filter">
             <div class="date-range-container">
                 <div class="filter-group">
-                    <b id="lblStartDate">Mulai:</b>
+                    <b id="lblStartDate">Start:</b>
                     <input type="date" id="startDate" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
                 </div>
                 <div class="filter-group">
-                    <b id="lblEndDate">Sampai:</b>
+                    <b id="lblEndDate">End:</b>
                     <input type="date" id="endDate" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
                 </div>
             </div>
             <div class="filter-group">
-                <b id="lblFilterType">Tipe:</b>
+                <b id="lblFilterType">Type:</b>
                 <select id="typeFilter" onchange="fetchData()" style="width:auto; padding:5px; border:1px solid #b9d8e5;">
-                    <option id="optAll" value="all">Semua</option>
-                    <option id="optFilterCredit" value="plus">Pemasukan (Iuran/Sumbangan)</option>
-                    <option id="optFilterDebit" value="minus">Pengeluaran (Kegiatan/Sosial)</option>
+                    <option id="optAll" value="all">All</option>
+                    <option id="optFilterCredit" value="plus">Income (Fees/Donations)</option>
+                    <option id="optFilterDebit" value="minus">Expense (Activity/Social)</option>
                 </select>
             </div>
         </div>
 
         <div class="card">
-            <div id="saldoAwalText" style="font-size:12px; color:#777; margin-bottom:5px;">Saldo Awal: Rp 0</div>
+            <div id="saldoAwalText" style="font-size:12px; color:#777; margin-bottom:5px;">Opening Balance: Rp 0</div>
             <div class="balance" id="totalSaldo">Rp 0</div>
             <div style="display:flex; justify-content: space-around; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                <div><small id="pemasukanLabel">Total Masuk</small><p class="plus" id="inc">+0</p></div>
-                <div><small id="pengeluaranLabel">Total Keluar</small><p class="minus" id="exp">-0</p></div>
+                <div><small id="pemasukanLabel">Total In</small><p class="plus" id="inc">+0</p></div>
+                <div><small id="pengeluaranLabel">Total Out</small><p class="minus" id="exp">-0</p></div>
             </div>
         </div>
 
         <div class="chart-container">
             <canvas id="cashflowChart"></canvas>
-            <p id="noChartData" style="display: none; position: absolute; color: #999; font-size: 13px;">Belum ada data</p>
+            <p id="noChartData" style="display: none; position: absolute; color: #999; font-size: 13px;">No data available</p>
         </div>
 
         <form id="txForm">
             <div style="display: flex; gap: 10px;">
                 <select id="jenis" style="flex: 1;">
-                    <option id="optPlus" value="plus">Pemasukan (+)</option>
-                    <option id="optMinus" value="minus">Pengeluaran (-)</option>
+                    <option id="optPlus" value="plus">Income (+)</option>
+                    <option id="optMinus" value="minus">Expense (-)</option>
                 </select>
-                <input type="number" id="jml" placeholder="Jumlah (Rp)" style="flex: 2;" required>
+                <input type="number" id="jml" placeholder="Amount (Rp)" style="flex: 2;" required>
             </div>
-            <input type="text" id="ket" placeholder="Keterangan (Contoh: Iuran Bpk Ahmad)" required>
-            <button id="saveBtn" type="submit" class="btn">Simpan Transaksi</button>
+            <input type="text" id="ket" placeholder="Description (e.g. Monthly Fee Mr. Ahmad)" required>
+            <button id="saveBtn" type="submit" class="btn">Save Transaction</button>
         </form>
 
-        <h4 id="historyTitle" style="margin-top:20px; margin-bottom: 10px;">Riwayat Transaksi</h4>
+        <h4 id="historyTitle" style="margin-top:20px; margin-bottom: 10px;">Transaction History</h4>
         <div id="list"></div>
 
-        <button id="btnPdf" class="btn" style="background-color: var(--dark); margin-top: 20px;" onclick="window.print()">📄 Cetak Laporan / Simpan PDF</button>
+        <button id="btnPdf" class="btn" style="background-color: var(--dark); margin-top: 20px;" onclick="window.print()">📄 Print Report / Save PDF</button>
     </div>
 
-    <!-- Modal Settings -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeSettings()">&times;</span>
-            <h2>Pengaturan</h2>
+            <h2 id="settingsHeading">Settings</h2>
             
-            <div class="setting-section" style="margin-top:15px;">
-                <h4>👤 Profil Pengurus</h4>
-                <label>Email Sekarang:</label>
+            <div class="setting-section">
+                <h4 id="langHeading">🌐 Language</h4>
+                <select id="langSelect" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="id">Bahasa Indonesia</option>
+                </select>
+            </div>
+
+            <div class="setting-section">
+                <h4 id="accountHeading">👤 Account Management</h4>
+                <label id="lblCurrEmail">Current Email:</label>
                 <input type="text" id="currentEmail" disabled style="background:#f0f0f0;">
-                <button class="btn" style="background:var(--red);" onclick="logout()">Keluar (Logout)</button>
+                
+                <label id="lblNewEmail">Update Email:</label>
+                <input type="email" id="newEmail" placeholder="New Email Address">
+                <button class="btn" style="background:var(--dark);" onclick="updateEmail()">Update Email</button>
+                
+                <label id="lblNewPass">New Password:</label>
+                <input type="password" id="newPass" placeholder="Minimum 6 characters">
+                <button class="btn" style="background:var(--dark);" onclick="updatePassword()">Update Password</button>
+            </div>
+
+            <div class="setting-section">
+                <button class="btn" style="background:var(--red);" onclick="logout()" id="btnLogout">Logout</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- KONFIGURASI SUPABASE (UPDATED) ---
     const SB_URL = 'https://ltndiinbhxpstzkfroqc.supabase.co';
     const SB_KEY = 'sb_publishable_nhL1q3f6pZvD396R-T_N9Q_JE996i25';
     const sbClient = supabase.createClient(SB_URL, SB_KEY);
 
     let authMode = 'login';
     let myChart = null;
+    let currentLang = 'en';
 
-    // --- AUTH FUNCTIONS ---
+    const translations = {
+        en: {
+            loginTitle: "Residents Financial Information System",
+            authBtn: "Login",
+            regLink: "Register Account",
+            regPrompt: "New Admin?",
+            cashflowTitle: "Cashflow",
+            settingsBtn: "⚙️ Settings",
+            lblStart: "Start:",
+            lblEnd: "End:",
+            lblType: "Type:",
+            optAll: "All",
+            optIn: "Income (Fees/Donations)",
+            optOut: "Expense (Activity/Social)",
+            openingBal: "Opening Balance: ",
+            totalIn: "Total In",
+            totalOut: "Total Out",
+            noData: "No data available",
+            formIn: "Income (+)",
+            formOut: "Expense (-)",
+            formAmount: "Amount (Rp)",
+            formDesc: "Description (e.g. Monthly Fee Mr. Ahmad)",
+            formSave: "Save Transaction",
+            history: "Transaction History",
+            btnPrint: "📄 Print Report / Save PDF",
+            langHead: "🌐 Language",
+            accHead: "👤 Account Management",
+            lblCurrEmail: "Current Email:",
+            lblNewEmail: "Update Email:",
+            lblNewPass: "New Password:",
+            btnLogout: "Logout",
+            alertApprove: "Account registered, but needs Admin/RT Head approval in Supabase dashboard.",
+            alertUpdateEmail: "Email updated! Please check your new email for confirmation link.",
+            alertUpdatePass: "Password updated successfully!",
+            confirmDel: "Delete this transaction?"
+        },
+        id: {
+            loginTitle: "Sistem Informasi Kas Warga",
+            authBtn: "Masuk",
+            regLink: "Daftar Akun",
+            regPrompt: "Pengurus Baru?",
+            cashflowTitle: "Arus Kas",
+            settingsBtn: "⚙️ Pengaturan",
+            lblStart: "Mulai:",
+            lblEnd: "Sampai:",
+            lblType: "Tipe:",
+            optAll: "Semua",
+            optIn: "Pemasukan (Iuran/Sumbangan)",
+            optOut: "Pengeluaran (Kegiatan/Sosial)",
+            openingBal: "Saldo Awal: ",
+            totalIn: "Total Masuk",
+            totalOut: "Total Keluar",
+            noData: "Belum ada data",
+            formIn: "Pemasukan (+)",
+            formOut: "Pengeluaran (-)",
+            formAmount: "Jumlah (Rp)",
+            formDesc: "Keterangan (Contoh: Iuran Bpk Ahmad)",
+            formSave: "Simpan Transaksi",
+            history: "Riwayat Transaksi",
+            btnPrint: "📄 Cetak Laporan / Simpan PDF",
+            langHead: "🌐 Bahasa",
+            accHead: "👤 Manajemen Akun",
+            lblCurrEmail: "Email Sekarang:",
+            lblNewEmail: "Ganti Email:",
+            lblNewPass: "Ganti Password:",
+            btnLogout: "Keluar (Logout)",
+            alertApprove: "Akun terdaftar, namun perlu persetujuan Admin/Ketua RT.",
+            alertUpdateEmail: "Email diperbarui! Periksa email baru Anda untuk konfirmasi.",
+            alertUpdatePass: "Password berhasil diperbarui!",
+            confirmDel: "Hapus transaksi ini?"
+        }
+    };
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        const t = translations[lang];
+        document.getElementById('loginTitle').innerText = (authMode === 'login') ? t.loginTitle : (lang === 'en' ? "Register New Admin" : "Daftar Pengurus Baru");
+        document.getElementById('authBtn').innerText = (authMode === 'login') ? t.authBtn : (lang === 'en' ? "Register Now" : "Daftar Sekarang");
+        document.getElementById('toggleLink').innerText = t.regLink;
+        document.getElementById('cashflowTitle').innerText = t.cashflowTitle;
+        document.getElementById('settingsBtn').innerText = t.settingsBtn;
+        document.getElementById('lblStartDate').innerText = t.lblStart;
+        document.getElementById('lblEndDate').innerText = t.lblEnd;
+        document.getElementById('lblFilterType').innerText = t.lblType;
+        document.getElementById('optAll').innerText = t.optAll;
+        document.getElementById('optFilterCredit').innerText = t.optIn;
+        document.getElementById('optFilterDebit').innerText = t.optOut;
+        document.getElementById('pemasukanLabel').innerText = t.totalIn;
+        document.getElementById('pengeluaranLabel').innerText = t.totalOut;
+        document.getElementById('noChartData').innerText = t.noData;
+        document.getElementById('optPlus').innerText = t.formIn;
+        document.getElementById('optMinus').innerText = t.formOut;
+        document.getElementById('jml').placeholder = t.formAmount;
+        document.getElementById('ket').placeholder = t.formDesc;
+        document.getElementById('saveBtn').innerText = t.formSave;
+        document.getElementById('historyTitle').innerText = t.history;
+        document.getElementById('btnPdf').innerText = t.btnPrint;
+        document.getElementById('langHeading').innerText = t.langHead;
+        document.getElementById('accountHeading').innerText = t.accHead;
+        document.getElementById('lblCurrEmail').innerText = t.lblCurrEmail;
+        document.getElementById('lblNewEmail').innerText = t.lblNewEmail;
+        document.getElementById('lblNewPass').innerText = t.lblNewPass;
+        document.getElementById('btnLogout').innerText = t.btnLogout;
+        fetchData(); 
+    }
+
+    function changeLanguage() {
+        setLanguage(document.getElementById('langSelect').value);
+    }
+
+    async function updateEmail() {
+        const newEmail = document.getElementById('newEmail').value;
+        if (!newEmail) return;
+        const { error } = await sbClient.auth.updateUser({ email: newEmail });
+        if (error) alert(error.message);
+        else alert(translations[currentLang].alertUpdateEmail);
+    }
+
+    async function updatePassword() {
+        const newPass = document.getElementById('newPass').value;
+        if (newPass.length < 6) return alert("Password too short");
+        const { error } = await sbClient.auth.updateUser({ password: newPass });
+        if (error) alert(error.message);
+        else alert(translations[currentLang].alertUpdatePass);
+    }
+
     async function checkUser() {
         const { data: { session } } = await sbClient.auth.getSession();
         if (session) {
-            // Cek apakah akun sudah di-approve
             const { data: profile } = await sbClient.from('profiles').select('is_approved').eq('id', session.user.id).single();
-            
             if (profile && profile.is_approved) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appScreen').style.display = 'block';
@@ -175,7 +318,7 @@
                 fetchData();
             } else {
                 await sbClient.auth.signOut();
-                alert("Akun terdaftar, namun perlu persetujuan Admin/Ketua RT di dashboard Supabase.");
+                alert(translations[currentLang].alertApprove);
             }
         }
     }
@@ -187,35 +330,25 @@
 
         if (authMode === 'login') {
             const { error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) { 
-                errEl.innerText = "Gagal masuk: " + error.message; 
-                errEl.style.display = 'block'; 
-            } else {
-                location.reload();
-            }
+            if (error) { errEl.innerText = error.message; errEl.style.display = 'block'; }
+            else { location.reload(); }
         } else {
             const { error } = await sbClient.auth.signUp({ email, password });
-            if (error) { 
-                errEl.innerText = "Gagal daftar: " + error.message; 
-                errEl.style.display = 'block'; 
-            } else {
-                alert("Berhasil Daftar! Segera lapor Ketua RT untuk mengaktifkan akun Anda agar bisa login.");
-                toggleAuthMode('login');
-            }
+            if (error) { errEl.innerText = error.message; errEl.style.display = 'block'; }
+            else { alert("Success! Contact RT Head to approve your account."); toggleAuthMode('login'); }
         }
     }
 
     function toggleAuthMode(mode) {
         authMode = mode;
-        document.getElementById('authBtn').innerText = (mode === 'login') ? "Masuk" : "Daftar Sekarang";
-        document.getElementById('loginTitle').innerText = (mode === 'login') ? "Sistem Informasi Kas Warga" : "Daftar Pengurus Baru";
+        setLanguage(currentLang);
     }
 
-    // --- DATA FUNCTIONS ---
     async function fetchData() {
         const startVal = document.getElementById('startDate').value;
         const endVal = document.getElementById('endDate').value;
         const selType = document.getElementById('typeFilter').value;
+        const t = translations[currentLang];
         
         const { data, error } = await sbClient.from('transaksi').select('*').order('created_at', { ascending: false });
         if (error) return;
@@ -233,7 +366,7 @@
             } else if (trDate >= startVal && trDate <= endVal) {
                 tr.jenis === 'plus' ? incTotal += amt : expTotal += amt;
                 if (selType === 'all' || selType === tr.jenis) {
-                    const dateStr = new Date(tr.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+                    const dateStr = new Date(tr.created_at).toLocaleDateString(currentLang === 'id' ? 'id-ID' : 'en-US', {day:'2-digit', month:'short', year:'numeric'});
                     listHtml.innerHTML += `
                         <div class="list-item" style="border-left-color:${tr.jenis === 'plus' ? '#27ae60' : '#c0392b'}">
                             <div><b>${tr.keterangan}</b><span class="timestamp">${dateStr}</span></div>
@@ -246,13 +379,12 @@
             }
         });
 
-        document.getElementById('saldoAwalText').innerText = `Saldo Awal: Rp ${sAwal.toLocaleString('id-ID')}`;
+        document.getElementById('saldoAwalText').innerText = `${t.openingBal} Rp ${sAwal.toLocaleString('id-ID')}`;
         document.getElementById('totalSaldo').innerText = `Rp ${(sAwal + incTotal - expTotal).toLocaleString('id-ID')}`;
         document.getElementById('inc').innerText = `+Rp ${incTotal.toLocaleString('id-ID')}`;
         document.getElementById('exp').innerText = `-Rp ${expTotal.toLocaleString('id-ID')}`;
         renderChart(incTotal, expTotal);
-        
-        document.getElementById('printPeriodeText').innerText = "Periode: " + startVal + " s/d " + endVal;
+        document.getElementById('printPeriodeText').innerText = (currentLang === 'id' ? "Periode: " : "Period: ") + startVal + " - " + endVal;
     }
 
     function renderChart(income, expense) {
@@ -266,7 +398,7 @@
         myChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Masuk', 'Keluar'],
+                labels: currentLang === 'id' ? ['Masuk', 'Keluar'] : ['In', 'Out'],
                 datasets: [{ data: [income, expense], backgroundColor: ['#27ae60', '#c0392b'] }]
             },
             options: { responsive: true, maintainAspectRatio: false }
@@ -282,19 +414,16 @@
         };
         const { error } = await sbClient.from('transaksi').insert([dataInsert]);
         if (!error) { e.target.reset(); fetchData(); }
-        else { alert("Gagal menyimpan data!"); }
+        else { alert("Error saving data!"); }
     };
 
     async function hapus(id) {
-        if (!confirm("Hapus transaksi ini?")) return;
-        const pass = prompt("Masukkan kembali Password Anda untuk konfirmasi keamanan:");
+        if (!confirm(translations[currentLang].confirmDel)) return;
+        const pass = prompt(currentLang === 'id' ? "Masukkan Password Konfirmasi:" : "Enter Password to Confirm:");
         if (!pass) return;
-        
         const { data: { session } } = await sbClient.auth.getSession();
         const { error: authErr } = await sbClient.auth.signInWithPassword({ email: session.user.email, password: pass });
-        
-        if (authErr) { alert("Password Salah!"); return; }
-        
+        if (authErr) { alert("Wrong Password!"); return; }
         await sbClient.from('transaksi').delete().eq('id', id);
         fetchData();
     }
@@ -303,7 +432,6 @@
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     async function logout() { await sbClient.auth.signOut(); location.reload(); }
 
-    // Init dates
     const now = new Date();
     document.getElementById('startDate').value = now.toISOString().slice(0, 8) + '01';
     document.getElementById('endDate').value = now.toISOString().slice(0, 10);
