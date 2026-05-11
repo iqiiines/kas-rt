@@ -50,7 +50,7 @@
 
         #loginScreen h2 { font-size: 18px; margin-bottom: 20px; color: var(--text-main); }
         input, select { 
-            width: 100%; padding: 14px; margin: 10px 0; 
+            width: 100%; padding: 14px; margin: 8px 0; 
             border-radius: 12px; border: 1px solid #e2e8f0; 
             background: #f1f5f9; transition: 0.3s; color: var(--text-main);
         }
@@ -64,7 +64,6 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
         
-        /* CSS TOMBOL ACTION */
         .btn-action { 
             padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
             display: flex; align-items: center; justify-content: center; gap: 4px;
@@ -117,6 +116,20 @@
 
         .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; }
         label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
+
+        /* --- CSS CUSTOM DROPDOWN --- */
+        .custom-dropdown-container { position: relative; width: 100%; }
+        .custom-dropdown-list {
+            position: absolute; width: 100%; max-height: 180px; overflow-y: auto;
+            background: #ffffff; border: 1px solid var(--primary); border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 50; display: none; margin-top: -5px;
+        }
+        .dropdown-item {
+            padding: 12px 15px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .dropdown-item:hover { background: #f8fafc; color: var(--primary); font-weight: 600;}
+        .dropdown-item-blok { font-size: 11px; color: var(--text-muted); background: #e2e8f0; padding: 2px 6px; border-radius: 4px;}
         
         /* ---------------- PRINT LAYOUT ---------------- */
         #printReportLayout { display: none; }
@@ -247,11 +260,30 @@
 
         <form id="txForm" class="no-print" style="margin-top:20px;">
             <div style="display:flex; gap:8px;">
-                <select id="jenis" style="flex:1;"><option value="plus">In (+)</option><option value="minus">Out (-)</option></select>
+                <select id="jenis" style="flex:1;">
+                    <option value="plus" id="optFormIn">In (+)</option>
+                    <option value="minus" id="optFormOut">Out (-)</option>
+                </select>
                 <input type="number" id="jml" placeholder="Amount (Rp)" style="flex:2;" required>
             </div>
+            
+            <div style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 8px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;" id="lblWarga">Identitas Warga (Opsional / Otomatis Tersimpan)</label>
+                
+                <div class="custom-dropdown-container">
+                    <input type="text" id="searchWarga" placeholder="Cari Nama/Blok atau Input Baru..." oninput="handleSearch()" onfocus="handleSearch()" autocomplete="off" style="margin-top: 0;">
+                    <div id="wargaDropdown" class="custom-dropdown-list">
+                        </div>
+                </div>
+                
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="noBlok" placeholder="No Blok" style="flex:1;">
+                    <input type="text" id="noTlp" placeholder="No Telp" style="flex:1;">
+                </div>
+            </div>
+
             <input type="text" id="ket" placeholder="Transaction Description" required>
-            <button type="submit" class="btn btn-primary" id="btnSave">Record Transaction</button>
+            <button type="submit" class="btn btn-primary" id="btnSave" style="margin-top: 15px;">Record Transaction</button>
         </form>
 
         <h4 id="txtHistTitle" class="no-print" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
@@ -322,6 +354,7 @@
     let myChart = null;
     let idleTimer;
     let cachedTransactions = []; 
+    let databaseWarga = []; // Menyimpan list warga dari database
 
     const i18n = {
         en: {
@@ -331,7 +364,9 @@
             appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out",
             toggleReg: "Register New Admin", toggleLogin: "Already have an account? Sign In",
             filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter",
-            btnEdit: "Edit", btnDel: "Delete"
+            btnEdit: "Edit", btnDel: "Delete",
+            lblWarga: "Resident Database (Optional / Auto-save)", phNama: "Search Name/Block or Input New...", phBlok: "Block No.", phTlp: "Phone No.",
+            phKet: "Transaction Description", phAmt: "Amount (Rp)"
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
@@ -339,17 +374,78 @@
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
             appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar",
             toggleReg: "Daftar Pengurus Baru", toggleLogin: "Sudah punya akun? Masuk",
-            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter",
-            btnEdit: "Ubah", btnDel: "Hapus"
+            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Saring",
+            btnEdit: "Ubah", btnDel: "Hapus",
+            lblWarga: "Database Warga (Opsional / Otomatis Tersimpan)", phNama: "Cari Nama/Blok atau Input Baru...", phBlok: "No Blok", phTlp: "No Telp",
+            phKet: "Keterangan Transaksi", phAmt: "Jumlah (Rp)"
         }
     };
 
+    // --- FITUR DATABASE WARGA (SUPABASE) ---
+    async function fetchWarga() {
+        // Ambil dari tabel warga, urutkan berdasarkan blok
+        const { data, error } = await sbClient.from('warga').select('*').order('blok', {ascending: true});
+        if (!error && data) {
+            databaseWarga = data;
+        }
+    }
+
+    function handleSearch() {
+        const keyword = document.getElementById('searchWarga').value.toLowerCase();
+        const dropdown = document.getElementById('wargaDropdown');
+        dropdown.innerHTML = '';
+
+        if (databaseWarga.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        // Filter berdasarkan nama atau blok
+        const filtered = databaseWarga.filter(w => 
+            (w.nama && w.nama.toLowerCase().includes(keyword)) || 
+            (w.blok && w.blok.toLowerCase().includes(keyword))
+        );
+
+        if (filtered.length > 0) {
+            filtered.forEach(w => {
+                dropdown.innerHTML += `
+                    <div class="dropdown-item" onmousedown="pilihWarga('${w.nama}', '${w.blok}', '${w.tlp}')">
+                        <span>${w.nama}</span>
+                        <span class="dropdown-item-blok">${w.blok || '-'}</span>
+                    </div>
+                `;
+            });
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+
+    function pilihWarga(nama, blok, tlp) {
+        document.getElementById('searchWarga').value = nama;
+        document.getElementById('noBlok').value = blok !== 'null' ? blok : '';
+        document.getElementById('noTlp').value = tlp !== 'null' ? tlp : '';
+        document.getElementById('wargaDropdown').style.display = 'none';
+    }
+
+    // Menutup dropdown saat klik di luar
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('wargaDropdown');
+        const input = document.getElementById('searchWarga');
+        if (!input.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+    // ----------------------------------------
+
     function setupRealtime() {
-        sbClient
-            .channel('any')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'transaksi' }, () => {
-                fetchData(); fetchPending();
-            }).subscribe();
+        sbClient.channel('transaksi_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'transaksi' }, () => {
+            fetchData(); fetchPending();
+        }).subscribe();
+
+        sbClient.channel('warga_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'warga' }, () => {
+            fetchWarga(); // Update list warga jika ada warga baru terinput
+        }).subscribe();
     }
 
     function resetIdleTimer() {
@@ -390,8 +486,16 @@
             document.getElementById('optOut').innerText = t.filterOut;
             document.getElementById('btnFilter').innerText = t.btnFilter;
 
+            document.getElementById('lblWarga').innerText = t.lblWarga;
+            document.getElementById('searchWarga').placeholder = t.phNama;
+            document.getElementById('noBlok').placeholder = t.phBlok;
+            document.getElementById('noTlp').placeholder = t.phTlp;
+            document.getElementById('ket').placeholder = t.phKet;
+            document.getElementById('jml').placeholder = t.phAmt;
+
             fetchData(); 
             fetchPending();
+            fetchWarga(); // Muat data database warga
         }
     }
 
@@ -544,14 +648,57 @@
 
     document.getElementById('txForm').onsubmit = async (e) => {
         e.preventDefault();
+        
+        const btnSave = document.getElementById('btnSave');
+        btnSave.disabled = true;
+        btnSave.innerText = 'Processing...';
+
+        const jenis = document.getElementById('jenis').value;
+        const jml = document.getElementById('jml').value;
+        let ket = document.getElementById('ket').value;
+        
+        const nama = document.getElementById('searchWarga').value.trim();
+        const blok = document.getElementById('noBlok').value.trim();
+        const tlp = document.getElementById('noTlp').value.trim();
+
+        // 1. Cek & Insert Warga Baru ke Database jika kolom Nama diisi
+        if (nama) {
+            // Cek apakah nama ini sudah ada di databaseWarga (case-insensitive)
+            const exists = databaseWarga.find(w => w.nama.toLowerCase() === nama.toLowerCase());
+            
+            if (!exists) {
+                // Jika belum ada, insert ke tabel warga
+                await sbClient.from('warga').insert([{ nama: nama, blok: blok, tlp: tlp }]);
+                // fetchWarga() akan dipanggil otomatis oleh subscription Realtime
+            } else if (exists.blok !== blok || exists.tlp !== tlp) {
+                // (Opsional) Update data warga jika blok/tlp berbeda dari sebelumnya
+                await sbClient.from('warga').update({ blok: blok, tlp: tlp }).eq('id', exists.id);
+            }
+
+            // Format keterangan untuk Transaksi
+            let infoWarga = nama;
+            if (blok) infoWarga += ` / ${blok}`;
+            if (tlp) infoWarga += ` / ${tlp}`;
+            ket = `[${infoWarga}] ${ket}`;
+        }
+
+        // 2. Insert Transaksi
         const { error } = await sbClient.from('transaksi').insert([{
-            keterangan: document.getElementById('ket').value,
-            jumlah: document.getElementById('jml').value,
-            jenis: document.getElementById('jenis').value,
+            keterangan: ket,
+            jumlah: jml,
+            jenis: jenis,
             status: 'approved'
         }]);
+
+        btnSave.disabled = false;
+        btnSave.innerText = 'Record Transaction';
+
         if (!error) {
-            e.target.reset();
+            document.getElementById('searchWarga').value = '';
+            document.getElementById('noBlok').value = '';
+            document.getElementById('noTlp').value = '';
+            document.getElementById('jml').value = '';
+            document.getElementById('ket').value = '';
             fetchData(); 
         } else {
             alert("Error: " + error.message);
