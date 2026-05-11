@@ -29,7 +29,7 @@
             color: var(--text-main);
             display: flex; 
             justify-content: center; 
-            align-items: center; /* Memastikan container berada di tengah dan tidak meregang ke bawah */
+            align-items: center;
             min-height: 100vh;
             padding: 20px;
         }
@@ -63,7 +63,17 @@
         }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        .btn-action { width: 32px; height: 32px; padding: 0; border-radius: 8px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+        
+        /* PEMBARUAN CSS TOMBOL ACTION AGAR LEBIH SMOOTH */
+        .btn-action { 
+            padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            cursor: pointer; border: none; transition: all 0.2s ease;
+        }
+        .btn-edit { background: #eff6ff; color: var(--primary); }
+        .btn-edit:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.15); }
+        .btn-delete { background: #fef2f2; color: var(--danger); }
+        .btn-delete:hover { background: var(--danger); color: white; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(239, 68, 68, 0.15); }
         
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .section-title { font-weight: 700; font-size: 18px; }
@@ -311,7 +321,7 @@
     let currentLang = localStorage.getItem('lang') || 'en';
     let myChart = null;
     let idleTimer;
-    let cachedTransactions = []; // For printing
+    let cachedTransactions = []; 
 
     const i18n = {
         en: {
@@ -320,7 +330,8 @@
             totalIn: "Income", totalOut: "Expense", save: "Record Transaction", history: "Recent History",
             appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out",
             toggleReg: "Register New Admin", toggleLogin: "Already have an account? Sign In",
-            filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter"
+            filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter",
+            btnEdit: "Edit", btnDel: "Delete"
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
@@ -328,14 +339,15 @@
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
             appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar",
             toggleReg: "Daftar Pengurus Baru", toggleLogin: "Sudah punya akun? Masuk",
-            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter"
+            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter",
+            btnEdit: "Ubah", btnDel: "Hapus"
         }
     };
 
     function setupRealtime() {
         sbClient
             .channel('any')
-            .on('postgres_changes', { event: '*', table: 'transaksi' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transaksi' }, () => {
                 fetchData(); fetchPending();
             }).subscribe();
     }
@@ -355,13 +367,11 @@
         document.getElementById('btnAuth').innerText = (authMode === 'login') ? t.btnLogin : t.btnReg;
         document.getElementById('authToggle').innerText = (authMode === 'login') ? t.toggleReg : t.toggleLogin;
         
-        // Style active language option on login screen
         document.getElementById('langId').style.fontWeight = currentLang === 'id' ? 'bold' : 'normal';
         document.getElementById('langId').style.color = currentLang === 'id' ? 'var(--primary)' : 'var(--text-muted)';
         document.getElementById('langEn').style.fontWeight = currentLang === 'en' ? 'bold' : 'normal';
         document.getElementById('langEn').style.color = currentLang === 'en' ? 'var(--primary)' : 'var(--text-muted)';
 
-        // Terapkan translasi elemen dashboard jika sudah login
         if (document.getElementById('appScreen').style.display === 'block') {
             document.getElementById('txtPendingTitle').innerText = t.pending;
             document.getElementById('txtOpenBal').innerText = t.openBal;
@@ -414,15 +424,12 @@
     function toggleAuthMode() { authMode = (authMode === 'login') ? 'register' : 'login'; applyLang(); }
 
     async function fetchData() {
-        // Ambil value dari form filter
         const start = document.getElementById('filterStart').value;
         const end = document.getElementById('filterEnd').value;
         const type = document.getElementById('filterType').value;
 
-        // Base Query
         let query = sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
         
-        // Filter Query
         if (start) query = query.gte('created_at', start + 'T00:00:00');
         if (end) query = query.lte('created_at', end + 'T23:59:59');
         if (type && type !== 'all') query = query.eq('jenis', type);
@@ -438,7 +445,6 @@
         data.forEach(tr => {
             const amt = parseFloat(tr.jumlah);
             tr.jenis === 'plus' ? inc += amt : exp += amt;
-            
             const safeKet = tr.keterangan.replace(/'/g, "\\'");
             
             list.innerHTML += `
@@ -451,8 +457,8 @@
                         ${tr.jenis==='plus'?'+':'-'} Rp ${amt.toLocaleString()}
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-action" style="background:#f1f5f9; color:var(--primary);" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">Edit</button>
-                        <button class="btn btn-action" style="background:#fee2e2; color:var(--danger);" onclick="deleteTx(${tr.id})">Delete</button>
+                        <button class="btn-action btn-edit" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">✏️ ${i18n[currentLang].btnEdit}</button>
+                        <button class="btn-action btn-delete" onclick="deleteTx(${tr.id})">🗑️ ${i18n[currentLang].btnDel}</button>
                     </div>
                 </div>`;
         });
@@ -481,14 +487,13 @@
                 <div id="pending-${tr.id}" style="display:flex; justify-content:space-between; align-items:center; background:white; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid #fef3c7; transition:0.2s;">
                     <div style="font-size:12px;"><b>${tr.keterangan}</b><br>Rp ${parseFloat(tr.jumlah).toLocaleString()}</div>
                     <div style="display:flex; gap:5px;">
-                        <button class="btn btn-action" style="background:var(--success); color:white;" onclick="approveTx(${tr.id}, this)" title="Approve">✓</button>
-                        <button class="btn btn-action" style="background:var(--danger); color:white;" onclick="rejectTx(${tr.id}, this)" title="Reject">✕</button>
+                        <button class="btn-action" style="background:var(--success); color:white; padding: 6px;" onclick="approveTx(${tr.id}, this)" title="Approve">✓</button>
+                        <button class="btn-action" style="background:var(--danger); color:white; padding: 6px;" onclick="rejectTx(${tr.id}, this)" title="Reject">✕</button>
                     </div>
                 </div>`;
         });
     }
 
-    // --- OPTIMISTIC UI FUNCTIONS ---
     async function approveTx(id, btnElement) { 
         const row = document.getElementById('pending-' + id);
         if (row) {
@@ -497,6 +502,7 @@
             if (btnElement) btnElement.innerHTML = '⏳';
         }
         await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id); 
+        fetchData(); fetchPending(); // Paksa Sinkronisasi Instan
     }
     
     async function rejectTx(id, btnElement) { 
@@ -504,12 +510,14 @@
             const row = document.getElementById('pending-' + id);
             if (row) row.style.display = 'none';
             await sbClient.from('transaksi').delete().eq('id', id); 
+            fetchPending(); // Paksa Sinkronisasi Instan
         }
     }
 
     async function deleteTx(id) {
         if(confirm("Are you sure you want to delete this transaction?")) {
             await sbClient.from('transaksi').delete().eq('id', id);
+            fetchData(); // Paksa Sinkronisasi Instan
         }
     }
 
@@ -531,6 +539,7 @@
         
         await sbClient.from('transaksi').update({ keterangan: ket, jumlah: jml, jenis: jenis }).eq('id', id);
         closeEditModal();
+        fetchData(); // Paksa Sinkronisasi Instan
     }
 
     document.getElementById('txForm').onsubmit = async (e) => {
@@ -541,7 +550,12 @@
             jenis: document.getElementById('jenis').value,
             status: 'approved'
         }]);
-        if (!error) e.target.reset();
+        if (!error) {
+            e.target.reset();
+            fetchData(); // Paksa Sinkronisasi Instan
+        } else {
+            alert("Error: " + error.message);
+        }
     };
 
     function renderChart(i, e) {
