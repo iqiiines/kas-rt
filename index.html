@@ -370,7 +370,8 @@
             filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter",
             btnEdit: "Edit", btnDel: "Delete",
             lblWarga: "Resident Database (Optional / Auto-save)", phNama: "Search Name/Block or Input New...", phBlok: "Block No.", phTlp: "Phone No.",
-            phKet: "Transaction Description", phAmt: "Amount (Rp)", phSearchHist: "Search Name / Block / Phone..."
+            phKet: "Transaction Description", phAmt: "Amount (Rp)", phSearchHist: "Search Name / Block / Phone...",
+            optFormIn: "In (+)", optFormOut: "Out (-)"
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
@@ -381,7 +382,8 @@
             filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter",
             btnEdit: "Ubah", btnDel: "Hapus",
             lblWarga: "Database Warga (Opsional / Otomatis Tersimpan)", phNama: "Cari Nama/Blok atau Input Baru...", phBlok: "No Blok", phTlp: "No Telp",
-            phKet: "Keterangan Transaksi", phAmt: "Jumlah (Rp)", phSearchHist: "Cari Nama / Blok / No Tlp..."
+            phKet: "Keterangan Transaksi", phAmt: "Jumlah (Rp)", phSearchHist: "Cari Nama / Blok / No Tlp...",
+            optFormIn: "Pemasukan (+)", optFormOut: "Pengeluaran (-)"
         }
     };
 
@@ -486,6 +488,9 @@
             document.getElementById('optIn').innerText = t.filterIn;
             document.getElementById('optOut').innerText = t.filterOut;
             document.getElementById('btnFilter').innerText = t.btnFilter;
+            
+            document.getElementById('optFormIn').innerText = t.optFormIn;
+            document.getElementById('optFormOut').innerText = t.optFormOut;
 
             document.getElementById('lblWarga').innerText = t.lblWarga;
             document.getElementById('searchWarga').placeholder = t.phNama;
@@ -529,32 +534,57 @@
 
     function toggleAuthMode() { authMode = (authMode === 'login') ? 'register' : 'login'; applyLang(); }
 
+    // --- LOGIKA TRANSAKSI GLOBAL VS FILTER ---
     async function fetchData() {
+        // 1. Ambil SEMUA data transaksi untuk dihitung sebagai Saldo Global
+        const { data, error } = await sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
+        if (error) return;
+        
+        let globalInc = 0, globalExp = 0;
+        data.forEach(tr => {
+            const amt = parseFloat(tr.jumlah);
+            tr.jenis === 'plus' ? globalInc += amt : globalExp += amt;
+        });
+        
+        // Update Chart & Card Atas (Akan selalu utuh tidak terpengaruh filter pencarian)
+        document.getElementById('totalSaldo').innerText = `Rp ${(globalInc - globalExp).toLocaleString()}`;
+        document.getElementById('inc').innerText = `+Rp ${globalInc.toLocaleString()}`;
+        document.getElementById('exp').innerText = `-Rp ${globalExp.toLocaleString()}`;
+        renderChart(globalInc, globalExp);
+
+        // 2. Terapkan Filter HANYA pada tabel data di bawah
         const start = document.getElementById('filterStart').value;
         const end = document.getElementById('filterEnd').value;
         const type = document.getElementById('filterType').value;
-        const search = document.getElementById('filterSearch').value.trim(); // Ambil nilai pencarian teks
+        const search = document.getElementById('filterSearch').value.trim().toLowerCase();
 
-        let query = sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
-        
-        if (start) query = query.gte('created_at', start + 'T00:00:00');
-        if (end) query = query.lte('created_at', end + 'T23:59:59');
-        if (type && type !== 'all') query = query.eq('jenis', type);
-        
-        // Fitur Pencarian menggunakan .ilike() ke kolom Keterangan
-        if (search) query = query.ilike('keterangan', `%${search}%`);
+        let filteredData = data;
 
-        const { data, error } = await query;
-        if (error) return;
-        cachedTransactions = data; 
+        if (start) {
+            const startDate = new Date(start + 'T00:00:00').getTime();
+            filteredData = filteredData.filter(tr => new Date(tr.created_at).getTime() >= startDate);
+        }
+        if (end) {
+            const endDate = new Date(end + 'T23:59:59').getTime();
+            filteredData = filteredData.filter(tr => new Date(tr.created_at).getTime() <= endDate);
+        }
+        if (type && type !== 'all') {
+            filteredData = filteredData.filter(tr => tr.jenis === type);
+        }
+        if (search) {
+            filteredData = filteredData.filter(tr => tr.keterangan.toLowerCase().includes(search));
+        }
+
+        cachedTransactions = filteredData; // Untuk Print (Print hanya mencetak data yang difilter)
         
-        let inc = 0, exp = 0;
+        // 3. Render tabel HTML
         const list = document.getElementById('list');
         list.innerHTML = '';
+        let printInc = 0, printExp = 0;
         
-        data.forEach(tr => {
+        filteredData.forEach(tr => {
             const amt = parseFloat(tr.jumlah);
-            tr.jenis === 'plus' ? inc += amt : exp += amt;
+            tr.jenis === 'plus' ? printInc += amt : printExp += amt;
             const safeKet = tr.keterangan.replace(/'/g, "\\'");
             
             list.innerHTML += `
@@ -573,19 +603,14 @@
                 </div>`;
         });
         
-        // Peringatan jika data kosong setelah di filter
-        if(data.length === 0) {
+        if(filteredData.length === 0) {
              list.innerHTML = `<div style="text-align:center; padding: 15px; font-size: 12px; color: var(--text-muted);">Tidak ada transaksi ditemukan.</div>`;
         }
         
-        document.getElementById('totalSaldo').innerText = `Rp ${(inc - exp).toLocaleString()}`;
-        document.getElementById('inc').innerText = `+Rp ${inc.toLocaleString()}`;
-        document.getElementById('exp').innerText = `-Rp ${exp.toLocaleString()}`;
-        renderChart(inc, exp);
-        
-        document.getElementById('printInc').innerText = `Rp ${inc.toLocaleString()}`;
-        document.getElementById('printExp').innerText = `Rp ${exp.toLocaleString()}`;
-        document.getElementById('printBal').innerText = `Rp ${(inc - exp).toLocaleString()}`;
+        // Ringkasan di kertas Print (Hanya menjumlahkan data yang difilter)
+        document.getElementById('printInc').innerText = `Rp ${printInc.toLocaleString()}`;
+        document.getElementById('printExp').innerText = `Rp ${printExp.toLocaleString()}`;
+        document.getElementById('printBal').innerText = `Rp ${(printInc - printExp).toLocaleString()}`;
     }
 
     async function fetchPending() {
@@ -753,7 +778,7 @@
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     async function logout() { await sbClient.auth.signOut(); location.reload(); }
 
-    // Jalankan pengecekan ketika input search warga dienter
+    // Memungkinkan pencarian langsung ketika menekan 'Enter' di kotak filter nama
     document.getElementById('filterSearch').addEventListener("keypress", function(event) {
       if (event.key === "Enter") {
         event.preventDefault();
