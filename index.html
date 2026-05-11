@@ -328,7 +328,7 @@
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
             appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar",
             toggleReg: "Daftar Pengurus Baru", toggleLogin: "Sudah punya akun? Masuk",
-            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Saring"
+            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter"
         }
     };
 
@@ -451,8 +451,8 @@
                         ${tr.jenis==='plus'?'+':'-'} Rp ${amt.toLocaleString()}
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-action" style="background:#f1f5f9; color:var(--primary);" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">✏️</button>
-                        <button class="btn btn-action" style="background:#fee2e2; color:var(--danger);" onclick="deleteTx(${tr.id})">🗑️</button>
+                        <button class="btn btn-action" style="background:#f1f5f9; color:var(--primary);" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">Edit</button>
+                        <button class="btn btn-action" style="background:#fee2e2; color:var(--danger);" onclick="deleteTx(${tr.id})">Delete</button>
                     </div>
                 </div>`;
         });
