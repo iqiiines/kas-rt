@@ -288,6 +288,10 @@
 
         <h4 id="txtHistTitle" class="no-print" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
         
+        <div class="no-print" style="margin-bottom: 8px;">
+            <input type="text" id="filterSearch" placeholder="Cari Nama / Blok / No Tlp..." style="width: 100%; padding: 10px; margin: 0; font-size: 12px; border-radius: 8px;">
+        </div>
+
         <div class="no-print" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
             <input type="date" id="filterStart" style="flex: 1; padding: 10px; margin: 0; font-size: 12px;">
             <input type="date" id="filterEnd" style="flex: 1; padding: 10px; margin: 0; font-size: 12px;">
@@ -366,7 +370,7 @@
             filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter",
             btnEdit: "Edit", btnDel: "Delete",
             lblWarga: "Resident Database (Optional / Auto-save)", phNama: "Search Name/Block or Input New...", phBlok: "Block No.", phTlp: "Phone No.",
-            phKet: "Transaction Description", phAmt: "Amount (Rp)"
+            phKet: "Transaction Description", phAmt: "Amount (Rp)", phSearchHist: "Search Name / Block / Phone..."
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
@@ -374,16 +378,15 @@
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
             appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar",
             toggleReg: "Daftar Pengurus Baru", toggleLogin: "Sudah punya akun? Masuk",
-            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Saring",
+            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Filter",
             btnEdit: "Ubah", btnDel: "Hapus",
             lblWarga: "Database Warga (Opsional / Otomatis Tersimpan)", phNama: "Cari Nama/Blok atau Input Baru...", phBlok: "No Blok", phTlp: "No Telp",
-            phKet: "Keterangan Transaksi", phAmt: "Jumlah (Rp)"
+            phKet: "Keterangan Transaksi", phAmt: "Jumlah (Rp)", phSearchHist: "Cari Nama / Blok / No Tlp..."
         }
     };
 
     // --- FITUR DATABASE WARGA (SUPABASE) ---
     async function fetchWarga() {
-        // Ambil dari tabel warga, urutkan berdasarkan blok
         const { data, error } = await sbClient.from('warga').select('*').order('blok', {ascending: true});
         if (!error && data) {
             databaseWarga = data;
@@ -400,7 +403,6 @@
             return;
         }
 
-        // Filter berdasarkan nama atau blok
         const filtered = databaseWarga.filter(w => 
             (w.nama && w.nama.toLowerCase().includes(keyword)) || 
             (w.blok && w.blok.toLowerCase().includes(keyword))
@@ -428,7 +430,6 @@
         document.getElementById('wargaDropdown').style.display = 'none';
     }
 
-    // Menutup dropdown saat klik di luar
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('wargaDropdown');
         const input = document.getElementById('searchWarga');
@@ -444,7 +445,7 @@
         }).subscribe();
 
         sbClient.channel('warga_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'warga' }, () => {
-            fetchWarga(); // Update list warga jika ada warga baru terinput
+            fetchWarga(); 
         }).subscribe();
     }
 
@@ -492,10 +493,11 @@
             document.getElementById('noTlp').placeholder = t.phTlp;
             document.getElementById('ket').placeholder = t.phKet;
             document.getElementById('jml').placeholder = t.phAmt;
+            document.getElementById('filterSearch').placeholder = t.phSearchHist;
 
             fetchData(); 
             fetchPending();
-            fetchWarga(); // Muat data database warga
+            fetchWarga(); 
         }
     }
 
@@ -531,12 +533,16 @@
         const start = document.getElementById('filterStart').value;
         const end = document.getElementById('filterEnd').value;
         const type = document.getElementById('filterType').value;
+        const search = document.getElementById('filterSearch').value.trim(); // Ambil nilai pencarian teks
 
         let query = sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
         
         if (start) query = query.gte('created_at', start + 'T00:00:00');
         if (end) query = query.lte('created_at', end + 'T23:59:59');
         if (type && type !== 'all') query = query.eq('jenis', type);
+        
+        // Fitur Pencarian menggunakan .ilike() ke kolom Keterangan
+        if (search) query = query.ilike('keterangan', `%${search}%`);
 
         const { data, error } = await query;
         if (error) return;
@@ -566,6 +572,11 @@
                     </div>
                 </div>`;
         });
+        
+        // Peringatan jika data kosong setelah di filter
+        if(data.length === 0) {
+             list.innerHTML = `<div style="text-align:center; padding: 15px; font-size: 12px; color: var(--text-muted);">Tidak ada transaksi ditemukan.</div>`;
+        }
         
         document.getElementById('totalSaldo').innerText = `Rp ${(inc - exp).toLocaleString()}`;
         document.getElementById('inc').innerText = `+Rp ${inc.toLocaleString()}`;
@@ -661,28 +672,21 @@
         const blok = document.getElementById('noBlok').value.trim();
         const tlp = document.getElementById('noTlp').value.trim();
 
-        // 1. Cek & Insert Warga Baru ke Database jika kolom Nama diisi
         if (nama) {
-            // Cek apakah nama ini sudah ada di databaseWarga (case-insensitive)
             const exists = databaseWarga.find(w => w.nama.toLowerCase() === nama.toLowerCase());
             
             if (!exists) {
-                // Jika belum ada, insert ke tabel warga
                 await sbClient.from('warga').insert([{ nama: nama, blok: blok, tlp: tlp }]);
-                // fetchWarga() akan dipanggil otomatis oleh subscription Realtime
             } else if (exists.blok !== blok || exists.tlp !== tlp) {
-                // (Opsional) Update data warga jika blok/tlp berbeda dari sebelumnya
                 await sbClient.from('warga').update({ blok: blok, tlp: tlp }).eq('id', exists.id);
             }
 
-            // Format keterangan untuk Transaksi
             let infoWarga = nama;
             if (blok) infoWarga += ` / ${blok}`;
             if (tlp) infoWarga += ` / ${tlp}`;
             ket = `[${infoWarga}] ${ket}`;
         }
 
-        // 2. Insert Transaksi
         const { error } = await sbClient.from('transaksi').insert([{
             keterangan: ket,
             jumlah: jml,
@@ -691,7 +695,7 @@
         }]);
 
         btnSave.disabled = false;
-        btnSave.innerText = 'Record Transaction';
+        btnSave.innerText = i18n[currentLang].save;
 
         if (!error) {
             document.getElementById('searchWarga').value = '';
@@ -748,6 +752,14 @@
     function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     async function logout() { await sbClient.auth.signOut(); location.reload(); }
+
+    // Jalankan pengecekan ketika input search warga dienter
+    document.getElementById('filterSearch').addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        fetchData();
+      }
+    });
 
     checkUser();
 </script>
