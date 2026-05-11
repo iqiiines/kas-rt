@@ -64,7 +64,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
         
-        /* PEMBARUAN CSS TOMBOL ACTION AGAR LEBIH SMOOTH */
+        /* CSS TOMBOL ACTION */
         .btn-action { 
             padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
             display: flex; align-items: center; justify-content: center; gap: 4px;
@@ -118,7 +118,7 @@
         .chart-container { position: relative; height: 180px; width: 100%; margin-bottom: 20px; }
         label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 5px; }
         
-        /* ---------------- PRINT LAYOUT (LUXURY) ---------------- */
+        /* ---------------- PRINT LAYOUT ---------------- */
         #printReportLayout { display: none; }
         
         @media print {
@@ -457,8 +457,8 @@
                         ${tr.jenis==='plus'?'+':'-'} Rp ${amt.toLocaleString()}
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn-action btn-edit" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">✏️ ${i18n[currentLang].btnEdit}</button>
-                        <button class="btn-action btn-delete" onclick="deleteTx(${tr.id})">🗑️ ${i18n[currentLang].btnDel}</button>
+                        <button class="btn-action btn-edit" onclick="openEditModal(${tr.id}, '${safeKet}', ${amt}, '${tr.jenis}')">${i18n[currentLang].btnEdit}</button>
+                        <button class="btn-action btn-delete" onclick="deleteTx(${tr.id})">${i18n[currentLang].btnDel}</button>
                     </div>
                 </div>`;
         });
@@ -502,7 +502,7 @@
             if (btnElement) btnElement.innerHTML = '⏳';
         }
         await sbClient.from('transaksi').update({ status: 'approved' }).eq('id', id); 
-        fetchData(); fetchPending(); // Paksa Sinkronisasi Instan
+        fetchData(); fetchPending(); 
     }
     
     async function rejectTx(id, btnElement) { 
@@ -510,14 +510,14 @@
             const row = document.getElementById('pending-' + id);
             if (row) row.style.display = 'none';
             await sbClient.from('transaksi').delete().eq('id', id); 
-            fetchPending(); // Paksa Sinkronisasi Instan
+            fetchPending(); 
         }
     }
 
     async function deleteTx(id) {
         if(confirm("Are you sure you want to delete this transaction?")) {
             await sbClient.from('transaksi').delete().eq('id', id);
-            fetchData(); // Paksa Sinkronisasi Instan
+            fetchData(); 
         }
     }
 
@@ -539,7 +539,7 @@
         
         await sbClient.from('transaksi').update({ keterangan: ket, jumlah: jml, jenis: jenis }).eq('id', id);
         closeEditModal();
-        fetchData(); // Paksa Sinkronisasi Instan
+        fetchData(); 
     }
 
     document.getElementById('txForm').onsubmit = async (e) => {
@@ -552,7 +552,7 @@
         }]);
         if (!error) {
             e.target.reset();
-            fetchData(); // Paksa Sinkronisasi Instan
+            fetchData(); 
         } else {
             alert("Error: " + error.message);
         }
