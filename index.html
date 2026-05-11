@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Executive Admin Dashboard - RT 001/001</title>
+    <title>Admin Dashboard - RT 001/001</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -29,6 +29,7 @@
             color: var(--text-main);
             display: flex; 
             justify-content: center; 
+            align-items: center; /* Memastikan container berada di tengah dan tidak meregang ke bawah */
             min-height: 100vh;
             padding: 20px;
         }
@@ -148,7 +149,7 @@
 <div class="container">
     <div id="loginScreen">
         <div class="app-header">
-            <div class="app-brand">PETTY CASH PREMIER</div>
+            <div class="app-brand">PETTY CASH</div>
             <div class="app-address">RT 001/001 Jatimurni, Bekasi</div>
         </div>
         <h2 id="txtLoginTitle">Admin Authentication</h2>
@@ -156,6 +157,12 @@
         <input type="password" id="password" placeholder="Access Password">
         <button id="btnAuth" class="btn btn-primary" onclick="handleAuth()">Sign In</button>
         <p id="authToggle" style="font-size:13px; text-align:center; color:var(--primary); margin-top:15px; cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Register New Admin</p>
+        
+        <div style="text-align:center; margin-top: 15px; font-size: 12px;">
+            <span id="langId" onclick="changeLang('id')" style="cursor:pointer; transition:0.2s;">ID</span>
+            <span style="color:var(--text-muted); margin:0 5px;">|</span>
+            <span id="langEn" onclick="changeLang('en')" style="cursor:pointer; transition:0.2s;">EN</span>
+        </div>
     </div>
 
     <div id="appScreen" style="display:none;">
@@ -197,6 +204,7 @@
                 Authorized by RT 001/001 Administrator
             </div>
         </div>
+        
         <div class="section-header no-print">
             <h3 class="section-title" id="txtAppName">Financial Overview</h3>
             <button onclick="openSettings()" class="btn" style="width:auto; padding:8px 12px; background:#f1f5f9; color:var(--text-main); font-size:12px;">⚙️ Settings</button>
@@ -237,6 +245,18 @@
         </form>
 
         <h4 id="txtHistTitle" class="no-print" style="margin:25px 0 15px; font-weight:700; font-size:16px;">Recent History</h4>
+        
+        <div class="no-print" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+            <input type="date" id="filterStart" style="flex: 1; padding: 10px; margin: 0; font-size: 12px;">
+            <input type="date" id="filterEnd" style="flex: 1; padding: 10px; margin: 0; font-size: 12px;">
+            <select id="filterType" style="flex: 1; padding: 10px; margin: 0; font-size: 12px;">
+                <option value="all" id="optAll">All</option>
+                <option value="plus" id="optIn">Income (+)</option>
+                <option value="minus" id="optOut">Expense (-)</option>
+            </select>
+            <button class="btn btn-primary" style="padding: 10px 15px; width: auto; font-size: 12px;" onclick="fetchData()" id="btnFilter">Filter</button>
+        </div>
+
         <div id="list" class="no-print"></div>
         
         <button class="btn no-print" style="background:#1e293b; color:white; margin-top:20px;" onclick="generateReport()">📄 Generate Report</button>
@@ -298,13 +318,17 @@
             login: "Admin Authentication", reg: "New Admin Registration", btnLogin: "Sign In", btnReg: "Create Account",
             pending: "Approval Queue", openBal: "Available Balance",
             totalIn: "Income", totalOut: "Expense", save: "Record Transaction", history: "Recent History",
-            appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out"
+            appName: "Financial Overview", settings: "Settings", lang: "Language Selection", updEmail: "Update Credentials", logout: "Sign Out",
+            toggleReg: "Register New Admin", toggleLogin: "Already have an account? Sign In",
+            filterAll: "All", filterIn: "Income (+)", filterOut: "Expense (-)", btnFilter: "Filter"
         },
         id: {
             login: "Autentikasi Pengurus", reg: "Pendaftaran Pengurus Baru", btnLogin: "Masuk", btnReg: "Daftar Sekarang",
             pending: "Antrean Persetujuan", openBal: "Saldo Tersedia",
             totalIn: "Pemasukan", totalOut: "Pengeluaran", save: "Simpan Transaksi", history: "Riwayat Terkini",
-            appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar"
+            appName: "Ringkasan Keuangan", settings: "Pengaturan", lang: "Pilihan Bahasa", updEmail: "Kredensial Pengurus", logout: "Keluar",
+            toggleReg: "Daftar Pengurus Baru", toggleLogin: "Sudah punya akun? Masuk",
+            filterAll: "Semua", filterIn: "Pemasukan (+)", filterOut: "Pengeluaran (-)", btnFilter: "Saring"
         }
     };
 
@@ -329,18 +353,36 @@
         const t = i18n[currentLang];
         document.getElementById('txtLoginTitle').innerText = (authMode === 'login') ? t.login : t.reg;
         document.getElementById('btnAuth').innerText = (authMode === 'login') ? t.btnLogin : t.btnReg;
-        document.getElementById('txtPendingTitle').innerText = t.pending;
-        document.getElementById('txtOpenBal').innerText = t.openBal;
-        document.getElementById('txtIn').innerText = t.totalIn;
-        document.getElementById('txtOut').innerText = t.totalOut;
-        document.getElementById('btnSave').innerText = t.save;
-        document.getElementById('txtHistTitle').innerText = t.history;
-        document.getElementById('txtAppName').innerText = t.appName;
-        document.getElementById('txtSettTitle').innerText = t.settings;
-        document.getElementById('lblLang').innerText = t.lang;
-        document.getElementById('btnLogout').innerText = t.logout;
-        document.getElementById('langSelect').value = currentLang;
-        fetchData(); fetchPending();
+        document.getElementById('authToggle').innerText = (authMode === 'login') ? t.toggleReg : t.toggleLogin;
+        
+        // Style active language option on login screen
+        document.getElementById('langId').style.fontWeight = currentLang === 'id' ? 'bold' : 'normal';
+        document.getElementById('langId').style.color = currentLang === 'id' ? 'var(--primary)' : 'var(--text-muted)';
+        document.getElementById('langEn').style.fontWeight = currentLang === 'en' ? 'bold' : 'normal';
+        document.getElementById('langEn').style.color = currentLang === 'en' ? 'var(--primary)' : 'var(--text-muted)';
+
+        // Terapkan translasi elemen dashboard jika sudah login
+        if (document.getElementById('appScreen').style.display === 'block') {
+            document.getElementById('txtPendingTitle').innerText = t.pending;
+            document.getElementById('txtOpenBal').innerText = t.openBal;
+            document.getElementById('txtIn').innerText = t.totalIn;
+            document.getElementById('txtOut').innerText = t.totalOut;
+            document.getElementById('btnSave').innerText = t.save;
+            document.getElementById('txtHistTitle').innerText = t.history;
+            document.getElementById('txtAppName').innerText = t.appName;
+            document.getElementById('txtSettTitle').innerText = t.settings;
+            document.getElementById('lblLang').innerText = t.lang;
+            document.getElementById('btnLogout').innerText = t.logout;
+            document.getElementById('langSelect').value = currentLang;
+            
+            document.getElementById('optAll').innerText = t.filterAll;
+            document.getElementById('optIn').innerText = t.filterIn;
+            document.getElementById('optOut').innerText = t.filterOut;
+            document.getElementById('btnFilter').innerText = t.btnFilter;
+
+            fetchData(); 
+            fetchPending();
+        }
     }
 
     function changeLang(l) { currentLang = l; localStorage.setItem('lang', l); applyLang(); }
@@ -372,7 +414,20 @@
     function toggleAuthMode() { authMode = (authMode === 'login') ? 'register' : 'login'; applyLang(); }
 
     async function fetchData() {
-        const { data, error } = await sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
+        // Ambil value dari form filter
+        const start = document.getElementById('filterStart').value;
+        const end = document.getElementById('filterEnd').value;
+        const type = document.getElementById('filterType').value;
+
+        // Base Query
+        let query = sbClient.from('transaksi').select('*').eq('status', 'approved').order('created_at', {ascending: false});
+        
+        // Filter Query
+        if (start) query = query.gte('created_at', start + 'T00:00:00');
+        if (end) query = query.lte('created_at', end + 'T23:59:59');
+        if (type && type !== 'all') query = query.eq('jenis', type);
+
+        const { data, error } = await query;
         if (error) return;
         cachedTransactions = data; 
         
