@@ -21,6 +21,8 @@
             --success-text: #166534;
             --error-bg: #fee2e2;
             --error-text: #991b1b;
+            --pending-bg: #fef3c7;
+            --pending-text: #b45309;
         }
 
         * { 
@@ -190,6 +192,52 @@
             border: 1px solid #fecaca;
         }
 
+        /* --- STYLING UNTUK RIWAYAT PUBLIC --- */
+        .history-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .history-section h4 {
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-info { flex: 1; }
+        .history-desc { font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 4px; word-break: break-all; }
+        .history-date { font-size: 10px; color: var(--text-muted); }
+        
+        .history-meta { text-align: right; margin-left: 10px; }
+        .history-amt { font-size: 13px; font-weight: 700; color: var(--success-text); margin-bottom: 4px; }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-pending { background: var(--pending-bg); color: var(--pending-text); }
+        .badge-approved { background: var(--success-bg); color: var(--success-text); }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -229,6 +277,12 @@
         </button>
 
         <div id="msgBox" class="alert-box"></div>
+
+        <div class="history-section">
+            <h4 id="txtHistTitle">Recent Submissions</h4>
+            <div id="historyList" class="history-list">
+                </div>
+        </div>
     </div>
 
     <script>
@@ -252,7 +306,11 @@
                 btnLoading: "Submitting...",
                 errEmpty: "Please fill out all fields before submitting.",
                 errFail: "Failed to send: ",
-                okSuccess: "Submitted successfully! Please wait for Admin approval."
+                okSuccess: "Submitted successfully! Please wait for Admin approval.",
+                histTitle: "Recent Submissions",
+                histEmpty: "No recent submissions found.",
+                statPending: "Pending",
+                statApproved: "Approved"
             },
             id: {
                 title: "Pengiriman Pembayaran",
@@ -266,7 +324,11 @@
                 btnLoading: "Mengirim...",
                 errEmpty: "Harap isi semua kolom sebelum mengirim.",
                 errFail: "Gagal mengirim: ",
-                okSuccess: "Berhasil dikirim! Harap tunggu persetujuan Admin."
+                okSuccess: "Berhasil dikirim! Harap tunggu persetujuan Admin.",
+                histTitle: "Riwayat Terkini",
+                histEmpty: "Belum ada riwayat pengiriman.",
+                statPending: "Menunggu",
+                statApproved: "Disetujui"
             }
         };
 
@@ -281,22 +343,22 @@
             document.getElementById('desc').placeholder = t.plcPurpose;
             document.getElementById('langSelect').value = currentLang;
             
+            document.getElementById('txtHistTitle').innerText = t.histTitle;
+
             const btn = document.getElementById('submitBtn');
             if (!btn.disabled) {
                 btn.innerHTML = t.btnSubmit;
             }
+            
+            fetchHistory(); // Memuat ulang teks riwayat (Status dsb) dengan bahasa baru
         }
 
         function changeLang(lang) {
             currentLang = lang;
             localStorage.setItem('citizenLang', lang);
             applyLang();
-            hideAlert(); // Sembunyikan alert jika bahasa diganti agar teks tidak tercampur
+            hideAlert();
         }
-
-        // Jalankan saat pertama kali dimuat
-        applyLang();
-
 
         // --- CORE FUNCTIONS ---
         function hideAlert() {
@@ -309,12 +371,66 @@
             msgBox.className = `alert-box alert-${type}`;
         }
 
+        // Mengambil 5 riwayat terakhir dari Supabase
+        async function fetchHistory() {
+            const list = document.getElementById('historyList');
+            const t = i18n[currentLang];
+            
+            list.innerHTML = `<div style="text-align:center; font-size:12px; color:gray;">Loading...</div>`;
+
+            // Hanya mengambil data 'keterangan' yang diawali dengan '[CITIZEN' jika ingin filter khusus warga.
+            // Namun karena format kita pakai awalan itu, kita cukup filter dan ambil 5 terbaru.
+            const { data, error } = await sbClient
+                .from('transaksi')
+                .select('keterangan, jumlah, status, created_at')
+                .like('keterangan', '[CITIZEN:%') 
+                .order('created_at', { ascending: false })
+                .limit(4); // Batasi 4 riwayat agar tampilan card tidak terlalu panjang
+
+            if (error) {
+                list.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--error-text);">Failed to load history</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                list.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--text-muted);">${t.histEmpty}</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            data.forEach(tr => {
+                const date = new Date(tr.created_at).toLocaleDateString();
+                const amt = parseFloat(tr.jumlah).toLocaleString();
+                const isApproved = tr.status === 'approved';
+                
+                const statText = isApproved ? t.statApproved : t.statPending;
+                const badgeClass = isApproved ? 'badge-approved' : 'badge-pending';
+                
+                // Menghapus tulisan "[CITIZEN: ...]" agar tampilan lebih rapi untuk publik
+                // (Opsional, saat ini kita tampilkan apa adanya)
+                let descText = tr.keterangan;
+
+                list.innerHTML += `
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-desc">${descText}</div>
+                            <div class="history-date">${date}</div>
+                        </div>
+                        <div class="history-meta">
+                            <div class="history-amt">Rp ${amt}</div>
+                            <span class="badge ${badgeClass}">${statText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         async function submitData() {
             const name = document.getElementById('name').value.trim();
             const amt = document.getElementById('amt').value.trim();
             const desc = document.getElementById('desc').value.trim();
             const btn = document.getElementById('submitBtn');
-            const t = i18n[currentLang]; // Ambil teks sesuai bahasa aktif
+            const t = i18n[currentLang]; 
 
             if (!name || !amt || !desc) {
                 showAlert(t.errEmpty, "error");
@@ -330,7 +446,7 @@
                 keterangan: `[CITIZEN: ${name}] ${desc}`,
                 jumlah: amt,
                 jenis: 'plus',
-                status: 'pending' // Masuk ke antrean approval admin
+                status: 'pending' 
             }]);
 
             // Reset Button State
@@ -344,8 +460,14 @@
                 document.getElementById('name').value = '';
                 document.getElementById('amt').value = '';
                 document.getElementById('desc').value = '';
+                
+                // Refresh data riwayat setelah berhasil input
+                fetchHistory();
             }
         }
+
+        // Jalankan saat pertama kali dimuat
+        applyLang();
     </script>
 </body>
 </html>
